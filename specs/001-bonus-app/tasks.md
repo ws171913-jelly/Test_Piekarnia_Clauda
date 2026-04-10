@@ -49,7 +49,7 @@ implementację i testowanie każdej historii.
 
 ### Modele i baza danych
 
-- [ ] T007 Utwórz model SQLAlchemy `User` z polami auth: `pin_hash` (bcrypt), `login_attempts`, `locked_until`; utwórz model `Basket` (`backend/src/models/user.py`, `backend/src/models/basket.py`)
+- [ ] T007 Utwórz model SQLAlchemy `User` z polami auth: `pin_hash` (bcrypt), `login_attempts`, `locked_until`, `must_change_pin` (bool), `current_jti` (UUID); utwórz model `Basket` (`backend/src/models/user.py`, `backend/src/models/basket.py`)
 - [ ] T008 [P] Utwórz modele SQLAlchemy: `AuthCode`, `Transaction`, `HrEvent` (`backend/src/models/auth_code.py`, `backend/src/models/transaction.py`, `backend/src/models/hr_event.py`)
 - [ ] T009 Skonfiguruj async engine i sesję SQLAlchemy (`backend/src/database.py`)
 - [ ] T010 Utwórz migracje Alembic dla wszystkich tabel: users (z polami auth), baskets, auth_codes, transactions, hr_events (`backend/alembic/versions/001_initial_schema.py`)
@@ -57,16 +57,16 @@ implementację i testowanie każdej historii.
 ### Uwierzytelnianie pracownika (WF-016, WF-017, WF-019)
 
 - [ ] T011 [P] Schematy Pydantic: żądanie logowania (nr pracownika + PIN), odpowiedź z JWT, żądanie zmiany PIN (`backend/src/schemas/auth.py`)
-- [ ] T012 [P] Test jednostkowy: logika PIN — weryfikacja hash, blokada po 5 próbach, odblokowanie po 15 min (`backend/tests/unit/test_pin_auth.py`)
-- [ ] T013 [P] Test integracyjny: pełny przebieg logowania — sukces, błędny PIN ×5, blokada, ponowna próba po 15 min (`backend/tests/integration/test_auth_flow.py`)
-- [ ] T014 Serwis domenowy: weryfikacja PIN (bcrypt), licznik nieudanych prób, blokada konta, wydanie JWT z TTL 8h (`backend/src/domain/auth.py`)
-- [ ] T015 Router API: `POST /api/v1/auth/login` i `POST /api/v1/auth/change-pin` (`backend/src/api/v1/auth.py`)
+- [ ] T012 [P] Test jednostkowy: logika PIN — weryfikacja hash, blokada po 5 próbach, odblokowanie po 15 min, generowanie PIN tymczasowego (onboarding + reset), flaga `must_change_pin`, unieważnienie `jti` przy nowym logowaniu (`backend/tests/unit/test_pin_auth.py`)
+- [ ] T013 [P] Test integracyjny: pełny przebieg logowania — sukces, błędny PIN ×5, blokada, ponowna próba po 15 min; pierwsze logowanie PIN tymczasowym → wymuszona zmiana → dostęp; nowe logowanie unieważnia poprzednią sesję (`backend/tests/integration/test_auth_flow.py`)
+- [ ] T014 Serwis domenowy: weryfikacja PIN (bcrypt), licznik nieudanych prób, blokada konta, wydanie JWT z TTL 8h + generowanie `jti` zapisywanego w `users.current_jti`; generowanie PIN tymczasowego (dla NOWY_PRACOWNIK i RESET_PIN) z ustawieniem `must_change_pin = true`; obsługa wymuszonej zmiany PIN (zerowanie flagi i `jti`) (`backend/src/domain/auth.py`)
+- [ ] T015 Router API: `POST /api/v1/auth/login` (wykrywa `must_change_pin` i zwraca status wymuszonej zmiany) i `POST /api/v1/auth/change-pin` (zeruje `must_change_pin`, wydaje pełny JWT po zmianie) (`backend/src/api/v1/auth.py`)
 - [ ] T016 [P] Ekran logowania aplikacji mobilnej: formularz nr pracownika + PIN, komunikat blokady z odliczaniem (`mobile/src/screens/LoginScreen.tsx`)
 - [ ] T017 [P] Test ekranu LoginScreen: renderowanie formularza, komunikat po błędnym PIN, stan blokady (`mobile/tests/LoginScreen.test.tsx`)
 
 ### Middleware i infrastruktura API
 
-- [ ] T018 Zaimplementuj zależność FastAPI: weryfikacja tokenu JWT Bearer (8h TTL) (`backend/src/api/deps.py`)
+- [ ] T018 Zaimplementuj zależność FastAPI: weryfikacja tokenu JWT Bearer (8h TTL) + walidacja `jti` względem `users.current_jti` w bazie — token z nieaktualnym `jti` MUSI być odrzucony z HTTP 401 (`backend/src/api/deps.py`)
 - [ ] T019 [P] Zaimplementuj zależność FastAPI: walidacja klucza `X-POS-API-Key` per-terminal (`backend/src/api/deps.py`)
 - [ ] T020 [P] Skonfiguruj globalny handler błędów i kody odpowiedzi domenowych (`backend/src/api/errors.py`)
 - [ ] T021 Utwórz skrypt seed danych deweloperskich: 3 koszyki, 5 pracowników z PIN-ami, 2 terminale POS (`backend/scripts/seed_dev_data.py`)
@@ -159,12 +159,16 @@ dla tego samego kodu (jedno zatwierdzenie), wyślij webhook HR DOŁADOWANIE, zwe
 
 - [ ] T055 [US3] Rozszerz logikę domenową o walidację karencji 30 min i blokadę zerowego salda (`backend/src/domain/codes.py`)
 - [ ] T056 [P] [US3] Zadanie cron: wygasanie aktywnych kodów po TTL — zmiana statusu na WYGASŁY (`backend/src/tasks/expire_codes.py`)
-- [ ] T057 [US3] Serwis domenowy: przetwarzanie zdarzeń HR — NOWY_PRACOWNIK, ZMIANA_KOSZYKA, DOŁADOWANIE, KONIEC_OKRESU, DEZAKTYWACJA (`backend/src/domain/hr_processor.py`)
+- [ ] T057 [US3] Serwis domenowy: przetwarzanie zdarzeń HR — NOWY_PRACOWNIK (tworzy rekord + generuje PIN tymczasowy, zwraca go w odpowiedzi webhooka), ZMIANA_KOSZYKA, DOŁADOWANIE, KONIEC_OKRESU (atomowe: zerowanie sald + unieważnienie wszystkich kodów AKTYWNY → WYGASŁY w jednej transakcji), DEZAKTYWACJA, RESET_PIN (generuje nowy PIN tymczasowy, zeruje blokadę); dla wszystkich typów poza NOWY_PRACOWNIK: odrzucenie 422 gdy pracownik nieznany (`backend/src/domain/hr_processor.py`)
 - [ ] T058 [US3] Serwis domenowy: logika zwrotu — walidacja okna 48h, uznanie rabatu, zapis ZWROT (`backend/src/domain/transactions.py`)
 - [ ] T059 [P] [US3] Schematy Pydantic: zdarzenia HR i żądanie zwrotu POS (`backend/src/schemas/hr_events.py`)
 - [ ] T060 [US3] Router API: `POST /api/v1/hr/events` — odbiór i weryfikacja podpisu HMAC-SHA256 (`backend/src/api/v1/hr_events.py`)
 - [ ] T061 [US3] Router API: `POST /api/v1/codes/refund` — zwrot z walidacją okna 48h (`backend/src/api/v1/codes.py`)
 - [ ] T062 [P] [US3] Skrypt pomocniczy: generowanie podpisu HMAC do testów webhooka (`backend/scripts/sign_webhook.py`)
+- [ ] T072 [P] [US3] Test integracyjny: zdarzenie `RESET_PIN` — nowy PIN tymczasowy w odpowiedzi, wymuszona zmiana przy pierwszym logowaniu, zerowanie blokady (`backend/tests/integration/test_reset_pin.py`)
+- [ ] T073 [P] [US3] Test integracyjny: zdarzenie `KONIEC_OKRESU` — atomowe zerowanie sald + unieważnienie wszystkich kodów AKTYWNY; kod użyty po zdarzeniu → błąd WYGASŁY (`backend/tests/integration/test_period_end_codes.py`)
+- [ ] T074 [P] [US3] Test integracyjny: webhook z nieznanym `hr_employee_id` → HTTP 422 dla DOŁADOWANIE/ZMIANA_KOSZYKA/RESET_PIN; NOWY_PRACOWNIK → 202 (tworzy rekord) (`backend/tests/integration/test_unknown_employee_webhook.py`)
+- [ ] T075 [P] [US3] Test jednostkowy: unieważnienie sesji `jti` — stary token 401 po nowym logowaniu tego samego pracownika (`backend/tests/unit/test_jti_invalidation.py`)
 
 **Punkt kontrolny**: Wszystkie trzy historie działają niezależnie i są odporne na nadużycia
 

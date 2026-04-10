@@ -1,7 +1,7 @@
 # Kontrakt API: Webhook integracji HR
 
 **Wersja**: 1.0.0 | **Data**: 2026-04-10
-**Podstawa**: `spec.md` WF-011, `research.md` §4
+**Podstawa**: `spec.md` WF-011, WF-020, WF-022, WF-023, `research.md` §4
 
 ---
 
@@ -85,6 +85,8 @@ Odbiera zdarzenie z systemu kadrowo-płacowego.
 ```
 
 Zeruje salda wszystkich aktywnych pracowników, których `balance_expiry_date` ≤ `period_end_date`.
+Atomowo (w jednej transakcji DB) unieważnia wszystkie kody o statusie AKTYWNY tych pracowników
+(zmiana statusu → WYGASŁY).
 
 #### DEZAKTYWACJA
 
@@ -96,6 +98,23 @@ Zeruje salda wszystkich aktywnych pracowników, których `balance_expiry_date` �
   "payload": {
     "hr_employee_id": "EMP-00399",
     "reason": "ROZWIĄZANIE_UMOWY"
+  }
+}
+```
+
+#### RESET_PIN
+
+Generuje nowy tymczasowy PIN dla wskazanego pracownika i ustawia `must_change_pin = true`.
+Pracownik jest zobowiązany zmienić PIN przy następnym logowaniu.
+
+```json
+{
+  "event_type": "RESET_PIN",
+  "event_id": "hr-evt-0006",
+  "occurred_at": "2026-04-10T09:00:00Z",
+  "payload": {
+    "hr_employee_id": "EMP-00421",
+    "reason": "ZAPOMNIANY_PIN"
   }
 }
 ```
@@ -138,6 +157,20 @@ Zeruje salda wszystkich aktywnych pracowników, których `balance_expiry_date` �
   "message": "Zdarzenie zostało już zarejestrowane."
 }
 ```
+
+**422 Unprocessable Entity** — pracownik nie istnieje w BonusApp (dla zdarzeń innych niż NOWY_PRACOWNIK)
+
+```json
+{
+  "error": "NIEZNANY_PRACOWNIK",
+  "message": "Pracownik EMP-00999 nie istnieje w systemie BonusApp.",
+  "hr_employee_id": "EMP-00999"
+}
+```
+
+> Zdarzenie NOWY_PRACOWNIK tworzy rekord — nie podlega temu walidatorowi.
+> Wszystkie pozostałe typy (ZMIANA_KOSZYKA, DOŁADOWANIE, KONIEC_OKRESU, DEZAKTYWACJA, RESET_PIN)
+> zwracają 422 gdy `hr_employee_id` nie odpowiada żadnemu rekordowi w tabeli `users`.
 
 ---
 

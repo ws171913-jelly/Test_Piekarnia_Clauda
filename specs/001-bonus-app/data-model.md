@@ -18,6 +18,11 @@ powielane — encja przechowuje wyłącznie dane finansowo-operacyjne.
 | `id` | UUID | PK, not null | Wewnętrzny identyfikator |
 | `hr_employee_id` | VARCHAR(64) | UNIQUE, not null | ID pracownika w systemie HR |
 | `basket_id` | UUID | FK → baskets, not null | Przypisany koszyk rabatowy |
+| `pin_hash` | VARCHAR(128) | not null | Hash bcrypt PIN-u (4–6 cyfr) |
+| `must_change_pin` | BOOLEAN | not null, default false | Wymuszenie zmiany PIN przy następnym logowaniu |
+| `login_attempts` | SMALLINT | not null, default 0 | Liczba nieudanych prób logowania |
+| `locked_until` | TIMESTAMPTZ | nullable | Blokada konta do podanego czasu (null = brak blokady) |
+| `current_jti` | UUID | nullable | JTI aktywnego tokenu JWT (null = brak aktywnej sesji) |
 | `current_balance` | NUMERIC(10,2) | not null, ≥ 0 | Aktualne saldo w PLN |
 | `balance_expiry_date` | DATE | not null | Data wygaśnięcia bieżących środków |
 | `last_code_generated_at` | TIMESTAMPTZ | nullable | Znacznik ostatniego generowania kodu |
@@ -30,10 +35,15 @@ powielane — encja przechowuje wyłącznie dane finansowo-operacyjne.
 - `current_balance` ≥ 0 — wymuszane na poziomie bazy (CHECK constraint).
 - `balance_expiry_date` musi być datą przyszłą lub bieżącą przy doładowaniu.
 - Tylko jeden aktywny koszyk (`basket_id`) na pracownika w danym momencie.
+- `login_attempts` ≥ 5 → konto zablokowane przez 15 min (`locked_until = now() + 15 min`); licznik zerowany po udanym logowaniu.
+- `must_change_pin = true` ustawiany przy onboardingu (NOWY_PRACOWNIK) i resecie PIN (RESET_PIN); zerowany po pomyślnej zmianie PIN.
+- `current_jti` aktualizowany przy każdym logowaniu; middleware odrzuca token z niezgodnym `jti` (HTTP 401).
 
 **Przejścia stanu**:
-- `is_active: true → false`: pracownik odchodzi z firmy lub traci uprawnienia (zdarzenie HR).
-- Saldo zerowane automatycznie po `balance_expiry_date` (zadanie cron).
+- `is_active: true → false`: pracownik odchodzi z firmy lub traci uprawnienia (zdarzenie HR DEZAKTYWACJA).
+- `must_change_pin: false → true`: przy zdarzeniu NOWY_PRACOWNIK lub RESET_PIN.
+- `must_change_pin: true → false`: po pomyślnym wywołaniu `/auth/change-pin`.
+- Saldo zerowane atomowo przy zdarzeniu KONIEC_OKRESU (jednocześnie unieważniane wszystkie kody AKTYWNY).
 
 ---
 
@@ -123,7 +133,7 @@ Kolejka przychodzących webhooków z systemu HR do przetworzenia asynchronicznie
 | Pole | Typ | Ograniczenia | Opis |
 |------|-----|-------------|------|
 | `id` | UUID | PK, not null | Identyfikator zdarzenia |
-| `event_type` | ENUM | not null | NOWY_PRACOWNIK / ZMIANA_KOSZYKA / DOŁADOWANIE / KONIEC_OKRESU / DEZAKTYWACJA |
+| `event_type` | ENUM | not null | NOWY_PRACOWNIK / ZMIANA_KOSZYKA / DOŁADOWANIE / KONIEC_OKRESU / DEZAKTYWACJA / RESET_PIN |
 | `payload` | JSONB | not null | Surowe dane zdarzenia z systemu HR |
 | `status` | ENUM | not null, default OCZEKUJĄCE | OCZEKUJĄCE / PRZETWORZONE / BŁĄD |
 | `received_at` | TIMESTAMPTZ | not null, default now() | Czas odebrania webhooka |
