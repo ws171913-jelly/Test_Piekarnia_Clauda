@@ -102,6 +102,10 @@ i weryfikację, że wszystkie są poprawnie odrzucane.
 
 ### Przypadki brzegowe
 
+- Co się dzieje po 5 błędnych próbach podania PIN-u?
+  Konto zostaje zablokowane na 15 minut; aplikacja wyświetla pozostały czas blokady.
+  Po upływie 15 minut pracownik może próbować ponownie bez dodatkowej interwencji.
+
 - Co się dzieje, gdy POS nigdy nie wysyła żądania finalizacji po zatwierdzeniu przez API?
   Kod pozostaje w stanie nierozstrzygniętym; zadanie czasowe MUSI go wygasić i zwolnić
   zarezerwowane saldo.
@@ -112,6 +116,16 @@ i weryfikację, że wszystkie są poprawnie odrzucane.
   Aplikacja MUSI wyświetlić czytelny błąd; generowanie kodu offline jest niedozwolone.
 - Co się dzieje, gdy API jest niedostępne podczas weryfikacji przez POS?
   POS MUSI otrzymać odpowiedź błędu; kasjer wraca do standardowej płatności pełną ceną.
+
+## Wyjaśnienia
+
+### Sesja 2026-04-10
+
+- Q: Jak pracownik loguje się do aplikacji BonusApp? → A: Własny login BonusApp — numer pracownika + PIN (zarządzany lokalnie w bazie BonusApp)
+- Q: Jaki poziom dostępności jest wymagany dla API BonusApp? → A: 99,5% miesięcznie (~3,6 h dopuszczalnego przestoju)
+- Q: Czy endpoint logowania i generowania kodu wymagają rate limitingu poza karencją 30 min? → A: Tylko blokada konta po 5 błędnych próbach PIN (odblokowanie po 15 min); brak limitu IP
+- Q: Jak długo historia transakcji i logi aktywności muszą być przechowywane? → A: 24 miesiące dla transakcji (wymóg regulacyjny), 6 miesięcy dla logów operacyjnych
+- Q: Jak długo trwa sesja JWT pracownika w aplikacji mobilnej? → A: 8 godzin (jedna zmiana robocza)
 
 ## Wymagania *(wymagane)*
 
@@ -147,6 +161,20 @@ i weryfikację, że wszystkie są poprawnie odrzucane.
 - **WF-014**: Jeśli zatwierdzenie transakcji spychałoby saldo pracownika poniżej 0, system
   MUSI odrzucić całą transakcję i zwrócić błąd `NIEWYSTARCZAJĄCE_SALDO`. Ujemne saldo jest
   niedozwolone. Kasjer informuje klienta o konieczności płatności pełną ceną.
+- **WF-016**: Pracownik loguje się do aplikacji mobilnej za pomocą numeru pracownika (z systemu HR)
+  i własnego PIN-u (4–6 cyfr) zarządzanego przez BonusApp. PIN jest przechowywany jako hash
+  (bcrypt) w lokalnej bazie BonusApp. Po pomyślnym uwierzytelnieniu API wydaje token JWT
+  z czasem ważności sesji. Pracownik MUSI móc samodzielnie zmienić PIN w aplikacji.
+- **WF-019**: Token JWT wydawany po pomyślnym logowaniu MUSI wygasać po 8 godzinach.
+  Po wygaśnięciu pracownik MUSI ponownie podać numer pracownika i PIN. Brak mechanizmu
+  odświeżania tokenu — każda sesja wymaga pełnego uwierzytelnienia.
+- **WF-018**: Rekordy transakcji MUSZĄ być przechowywane przez minimum 24 miesiące.
+  Logi operacyjne (generowanie kodów, logowania, zdarzenia blokady konta) MUSZĄ być
+  przechowywane przez minimum 6 miesięcy. Usunięcie danych przed upływem tych okresów
+  jest niedozwolone.
+- **WF-017**: Po 5 kolejnych błędnych próbach podania PIN-u konto pracownika MUSI zostać
+  zablokowane na 15 minut. Pracownik MUSI otrzymać czytelny komunikat o blokadzie i czasie
+  jej zakończenia. Licznik błędnych prób jest zerowany po pomyślnym logowaniu.
 - **WF-015**: Uprawnienie do korzystania z systemu przysługuje wyłącznie pracownikom
   przypisanym do fizycznej placówki pracodawcy. Pracownicy centrali i biur regionalnych
   są wykluczeni z systemu BonusApp. Weryfikacja przypisania do placówki odbywa się na
@@ -155,7 +183,8 @@ i weryfikację, że wszystkie są poprawnie odrzucane.
 ### Kluczowe encje
 
 - **Użytkownik (Pracownik)**: Tożsamość systemowa powiązana z rekordem HR; przechowuje
-  `aktualne_saldo`, `data_waznosci_srodkow`, `id_koszyka`, `ostatni_kod_wygenerowano_o`.
+  `aktualne_saldo`, `data_waznosci_srodkow`, `id_koszyka`, `ostatni_kod_wygenerowano_o`,
+  `pin_hash` (bcrypt), `numer_pracownika` (unikalny, z systemu HR).
 - **Koszyk**: Grupa rabatowa; przechowuje `procent_rabatu`, `miesięczny_limit_pln`
   oraz zbiór przypisanych ID użytkowników. Pochodzi z systemu kadrowo-płacowego.
 - **Kod autoryzacyjny**: Jednorazowy OTP; przechowuje `wartość_kodu`, `id_użytkownika`,
@@ -184,6 +213,12 @@ i weryfikację, że wszystkie są poprawnie odrzucane.
   jednym zatwierdzeniem — 0% zdarzeń podwójnego rabatu.
 - **KS-007**: Aplikacja wyświetla zbuforowane saldo i historię bez dostępu do sieci przez
   co najmniej 24 godziny od ostatniej udanej synchronizacji.
+- **KS-008**: API BonusApp osiąga dostępność ≥ 99,5% miesięcznie (dopuszczalny przestój
+  ≤ 3,6 h/miesiąc). Przy niedostępności API kasjer stosuje standardową płatność pełną ceną
+  bez konieczności eskalacji.
+- **KS-009**: Rekordy transakcji są przechowywane przez co najmniej 24 miesiące od daty
+  utworzenia. Logi operacyjne (generowanie kodów, próby logowania, zdarzenia blokady)
+  są przechowywane przez co najmniej 6 miesięcy.
 
 ## Założenia
 
@@ -196,9 +231,8 @@ i weryfikację, że wszystkie są poprawnie odrzucane.
 - Środki NIE są przenoszone między okresami (wstępnie NIE).
 - Aplikacja mobilna wymaga aktywnego połączenia z internetem do wygenerowania kodu;
   funkcjonalność offline ogranicza się do odczytu buforowanych danych.
-- Ujemne saldo NIE jest domyślnie dozwolone (patrz WF-014 — wymagane formalne wyjaśnienie).
-- Warunek „własnej placówki" dla pracowników spoza placówek jest odroczony do wyjaśnienia
-  kwestii uprawnień (patrz WF-015).
+- Ujemne saldo jest niedozwolone — transakcja skutkująca ujemnym saldem jest odrzucana w całości (WF-014).
+- Uprawnieni są wyłącznie pracownicy przypisani do fizycznej placówki pracodawcy (WF-015).
 - Przy zwrocie towaru rabat jest automatycznie uznawany na saldo pracownika, jednak wyłącznie
   jeśli żądanie zwrotu wpłynie do API w konfigurowalnym oknie czasowym od momentu transakcji
   (domyślnie: 48 godzin). Zwroty po upływie tego okresu wymagają ręcznej interwencji
