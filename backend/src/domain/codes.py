@@ -7,6 +7,7 @@ from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.config import settings
 from src.models.auth_code import AuthCode, AuthCodeStatus
@@ -117,24 +118,17 @@ async def verify_code(
     if matched_code is None:
         raise ValueError("Nieprawidłowy lub wygasły kod")
 
-    # Pobierz użytkownika z blokadą wiersza
+    # Pobierz użytkownika z blokadą wiersza i eager load koszyka
     result2 = await session.execute(
         select(User)
         .where(User.id == matched_code.user_id)
         .with_for_update()
+        .options(selectinload(User.basket))
     )
     user = result2.scalar_one()
 
-    discount_pct = float(user.basket.discount_pct) if user.basket else 0.0  # type: ignore[union-attr]
-    # Załaduj koszyk jeśli lazy
-    if not user.basket:
-        from src.models.basket import Basket
-        basket_result = await session.get(Basket, user.basket_id)
-        if basket_result:
-            discount_pct = float(basket_result.discount_pct)
-            monthly_limit = basket_result.monthly_limit_pln
-    else:
-        monthly_limit = user.basket.monthly_limit_pln  # type: ignore[union-attr]
+    discount_pct = float(user.basket.discount_pct) if user.basket else 0.0
+    monthly_limit = user.basket.monthly_limit_pln if user.basket else None
 
     discount_amount = _calculate_discount(
         gross_amount_pln, discount_pct, float(user.current_balance), monthly_limit

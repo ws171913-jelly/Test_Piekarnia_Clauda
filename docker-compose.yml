@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-bonusapp}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bonusapp_secret}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped

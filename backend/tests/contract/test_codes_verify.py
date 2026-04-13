@@ -8,26 +8,25 @@ Weryfikuje:
 """
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.domain.codes import generate_code
 from src.models.user import User
 
 
 @pytest.mark.asyncio
 class TestVerifyCodeContract:
-    async def _generate(self, session: AsyncSession, user: User) -> str:
-        code, _ = await generate_code(session, user)
-        await session.commit()
-        return code
+    async def _generate(self, authed_client: AsyncClient) -> str:
+        """Pomocnicza: generuje kod OTP przez HTTP API i zwraca plaintext kodu."""
+        resp = await authed_client.post("/api/v1/codes")
+        assert resp.status_code == 201
+        return resp.json()["code"]
 
     async def test_success_returns_200(
         self,
+        authed_client: AsyncClient,
         pos_client: AsyncClient,
-        session: AsyncSession,
         user: User,
     ):
-        code = await self._generate(session, user)
+        code = await self._generate(authed_client)
         resp = await pos_client.post(
             "/api/v1/codes/verify",
             json={"code": code, "gross_amount_pln": 100.0},
@@ -36,11 +35,11 @@ class TestVerifyCodeContract:
 
     async def test_response_schema(
         self,
+        authed_client: AsyncClient,
         pos_client: AsyncClient,
-        session: AsyncSession,
         user: User,
     ):
-        code = await self._generate(session, user)
+        code = await self._generate(authed_client)
         resp = await pos_client.post(
             "/api/v1/codes/verify",
             json={"code": code, "gross_amount_pln": 100.0},
@@ -54,12 +53,12 @@ class TestVerifyCodeContract:
 
     async def test_discount_amount_correct(
         self,
+        authed_client: AsyncClient,
         pos_client: AsyncClient,
-        session: AsyncSession,
         user: User,
     ):
         """Koszyk testowy = 20%, kwota = 100 PLN → rabat = 20 PLN."""
-        code = await self._generate(session, user)
+        code = await self._generate(authed_client)
         resp = await pos_client.post(
             "/api/v1/codes/verify",
             json={"code": code, "gross_amount_pln": 100.0},
@@ -108,11 +107,11 @@ class TestVerifyCodeContract:
 
     async def test_verification_token_is_string(
         self,
+        authed_client: AsyncClient,
         pos_client: AsyncClient,
-        session: AsyncSession,
         user: User,
     ):
-        code = await self._generate(session, user)
+        code = await self._generate(authed_client)
         resp = await pos_client.post(
             "/api/v1/codes/verify",
             json={"code": code, "gross_amount_pln": 100.0},
