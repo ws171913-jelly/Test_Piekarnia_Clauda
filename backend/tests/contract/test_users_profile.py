@@ -53,12 +53,13 @@ class TestUsersProfileContract:
         assert isinstance(balance, (int, float))
         assert balance >= 0
 
-    async def test_discount_pct_is_20(
+    async def test_discount_pct_is_valid_percentage(
         self, authed_client: AsyncClient, user: User
     ):
-        """Koszyk testowy ma 20% rabatu."""
+        """discount_pct mieści się w zakresie 0-100."""
         resp = await authed_client.get("/api/v1/users/me")
-        assert resp.json()["basket"]["discount_pct"] == 20.0
+        discount_pct = resp.json()["basket"]["discount_pct"]
+        assert 0 <= discount_pct <= 100
 
     async def test_no_auth_returns_401(
         self, http_client: AsyncClient

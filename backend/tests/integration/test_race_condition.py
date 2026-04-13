@@ -21,14 +21,14 @@ from src.models.user import User
 
 @pytest.mark.asyncio
 class TestRaceCondition:
-    async def test_double_verify_then_double_finalize(
+    async def test_sequential_double_finalize_protection(
         self, session: AsyncSession, user: User
     ):
         """
         Symulacja wyścigu: oba verify mogą przejść (odczyt bez blokady),
         ale tylko jeden finalize może się powieść — drugi dostaje 'już wykorzystany'.
         """
-        code, auth_code = await generate_code(session, user)
+        code, _auth_code = await generate_code(session, user)
 
         # Oba verify zwrócą token (odczyt without FOR UPDATE)
         token1, *_ = await verify_code(session, code, 100.0, "terminal-001")

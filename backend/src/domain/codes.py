@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.config import settings
+from src.domain.audit import log_code_generated
 from src.models.auth_code import AuthCode, AuthCodeStatus
 from src.models.user import User
 
@@ -79,6 +80,8 @@ async def generate_code(session: AsyncSession, user: User) -> tuple[str, AuthCod
     user.last_code_generated_at = now
     await session.commit()
     await session.refresh(auth_code)
+
+    log_code_generated(user.hr_employee_id, user.id, auth_code.id)
 
     return code, auth_code
 

@@ -29,7 +29,7 @@ class TestPurchaseFlow:
         assert auth_code.status == AuthCodeStatus.AKTYWNY
 
         # Krok 2: Weryfikacja przez POS
-        token, discount, discount_pct, net, code_id = await verify_code(
+        token, discount, _discount_pct, net, code_id = await verify_code(
             session, code, gross_amount, "terminal-dev"
         )
         assert discount == 20.0  # 20% z 100 PLN
@@ -61,7 +61,7 @@ class TestPurchaseFlow:
         self, session: AsyncSession, user: User
     ):
         """Rekord transakcji istnieje w bazie po finalizacji."""
-        code, auth_code = await generate_code(session, user)
+        code, _auth_code = await generate_code(session, user)
         token, *_ = await verify_code(session, code, 100.0, "terminal-dev")
         tx = await finalize_transaction(session, token)
 

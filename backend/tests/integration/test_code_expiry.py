@@ -18,14 +18,14 @@ class TestCodeExpiry:
         self, session: AsyncSession, user: User
     ):
         """Kod z wygasłym expires_at nie przechodzi weryfikacji."""
-        _, auth_code = await generate_code(session, user)
+        code, auth_code = await generate_code(session, user)
 
         # Ustaw wygasłą datę ręcznie
         auth_code.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
         await session.flush()
 
         with pytest.raises(ValueError, match="Nieprawidłowy lub wygasły"):
-            await verify_code(session, "000000", 100.0, "terminal-dev")
+            await verify_code(session, code, 100.0, "terminal-dev")
 
     async def test_active_code_within_ttl_works(
         self, session: AsyncSession, user: User

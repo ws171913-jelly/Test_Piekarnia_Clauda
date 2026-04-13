@@ -67,16 +67,36 @@ def anyio_backend():
 
 @pytest_asyncio.fixture(scope="session")
 async def test_engine():
-    """Async engine dla testowej bazy — tworzy i niszczy tabele raz na sesję."""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
+    """
+    Async engine dla testowej bazy — tworzy izolowany schemat PostgreSQL
+    o losowej nazwie (np. test_a3f7c2d1) i usuwa go po sesji.
+
+    Każdy przebieg pytest dostaje własny schemat, co eliminuje konflikty
+    przy równoległym uruchamianiu testów na tej samej bazie danych.
+    """
+    schema = f"test_{uuid.uuid4().hex[:8]}"
+
+    # Krok 1: utwórz schemat przez tymczasowy engine (bez nadpisania search_path)
+    bootstrap = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
+    async with bootstrap.begin() as conn:
+        await conn.execute(text(f'CREATE SCHEMA "{schema}"'))
+    await bootstrap.dispose()
+
+    # Krok 2: główny engine z search_path wskazującym wyłącznie na ten schemat
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        poolclass=NullPool,
+        connect_args={"server_settings": {"search_path": schema}},
+    )
     async with engine.begin() as conn:
-        await conn.execute(text("DROP SCHEMA public CASCADE"))
-        await conn.execute(text("CREATE SCHEMA public"))
         await conn.run_sync(Base.metadata.create_all)
+
     yield engine
+
+    # Teardown: DROP SCHEMA CASCADE usuwa schemat razem ze wszystkimi tabelami
     async with engine.begin() as conn:
-        await conn.execute(text("DROP SCHEMA public CASCADE"))
-        await conn.execute(text("CREATE SCHEMA public"))
+        await conn.execute(text(f"DROP SCHEMA {schema} CASCADE"))
     await engine.dispose()
 
 

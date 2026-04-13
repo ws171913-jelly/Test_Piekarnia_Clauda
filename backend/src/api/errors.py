@@ -14,13 +14,6 @@ def register_exception_handlers(app: FastAPI) -> None:
             content={"detail": str(exc)},
         )
 
-    @app.exception_handler(PermissionError)
-    async def permission_error_handler(request: Request, exc: PermissionError) -> JSONResponse:
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content={"detail": str(exc)},
-        )
-
     @app.exception_handler(LookupError)
     async def lookup_error_handler(request: Request, exc: LookupError) -> JSONResponse:
         return JSONResponse(
