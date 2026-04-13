@@ -112,7 +112,7 @@ class TestPurchaseFlow:
     ):
         """Nieważny token nie modyfikuje salda."""
         balance_before = float(user.current_balance)
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Nieważny|wygasły|token"):
             await finalize_transaction(session, "nieprawidlowy.token.jwt")
         await session.refresh(user)
         assert float(user.current_balance) == balance_before

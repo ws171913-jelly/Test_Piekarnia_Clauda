@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -10,6 +11,21 @@ class Settings(BaseSettings):
     environment: str = "development"
     # Przecinkowa lista kluczy POS — np. "key1,key2,key3"
     pos_api_keys: str = "pos-key-terminal-001,pos-key-terminal-002,pos-key-terminal-dev"
+
+    @model_validator(mode="after")
+    def _reject_insecure_defaults(self) -> "Settings":
+        insecure_defaults = {
+            "change-me-in-production-min-32-chars!!",
+            "change-hmac-secret-in-production",
+        }
+        if self.environment not in {"development", "dev", "local"}:
+            for field_name in ("secret_key", "hmac_secret"):
+                if getattr(self, field_name) in insecure_defaults:
+                    raise ValueError(
+                        f"Refusing to start with insecure default {field_name!r} in "
+                        f"{self.environment!r} environment. Set {field_name.upper()} env var."
+                    )
+        return self
 
     @property
     def pos_api_keys_set(self) -> set[str]:

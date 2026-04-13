@@ -104,9 +104,10 @@ async def process_refund(
 ) -> Transaction:
     """
     Zwrot w oknie 48h — uznanie rabatu na saldo pracownika.
+    Blokuje wielokrotne zwroty dla tej samej transakcji zakupu.
 
     Raises:
-        ValueError: poza oknem zwrotu, nie znaleziono transakcji
+        ValueError: poza oknem zwrotu, nie znaleziono transakcji, zwrot już dokonany
     """
     result = await session.execute(
         select(Transaction)
@@ -118,6 +119,19 @@ async def process_refund(
     orig = result.scalar_one_or_none()
     if orig is None:
         raise LookupError("Nie znaleziono transakcji zakupu dla tego pracownika")
+
+    # Sprawdź czy zwrot nie został już dokonany dla tej transakcji
+    refund_check = await session.execute(
+        select(Transaction)
+        .where(
+            Transaction.original_transaction_id == original_transaction_id,
+            Transaction.type == TransactionType.ZWROT,
+        )
+        .with_for_update()
+    )
+    existing_refund = refund_check.scalar_one_or_none()
+    if existing_refund is not None:
+        raise ValueError("Zwrot został już dokonany dla tej transakcji")
 
     now = datetime.now(timezone.utc)
     created_at = orig.created_at.replace(tzinfo=timezone.utc)

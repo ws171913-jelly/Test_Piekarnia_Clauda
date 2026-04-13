@@ -32,7 +32,7 @@ class AuthCode(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     transaction_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=True
+        UUID(as_uuid=True), ForeignKey("transactions.id", use_alter=True, name="fk_auth_codes_transaction_id"), nullable=True
     )
 
     user: Mapped["User"] = relationship("User", back_populates="auth_codes")  # type: ignore[name-defined]

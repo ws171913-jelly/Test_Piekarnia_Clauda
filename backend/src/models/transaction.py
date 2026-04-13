@@ -40,7 +40,7 @@ class Transaction(Base):
         UUID(as_uuid=True), ForeignKey("transactions.id"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
+        DateTime(timezone=True), nullable=False, server_default=func.clock_timestamp()
     )
 
     user: Mapped["User"] = relationship("User", back_populates="transactions")  # type: ignore[name-defined]

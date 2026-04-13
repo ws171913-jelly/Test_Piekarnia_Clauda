@@ -12,9 +12,13 @@ import uuid
 from datetime import date, timedelta, timezone
 from typing import AsyncGenerator
 
+import asyncio
+
 import pytest
 import pytest_asyncio
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from src.domain.auth import hash_pin
 from src.models.auth_code import AuthCode, AuthCodeStatus
@@ -33,9 +37,28 @@ _DEFAULT_TEST_URL = (
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", _DEFAULT_TEST_URL)
 
 
+def _is_test_database(url: str) -> bool:
+    """Sprawdza czy URL bazy wygląda jak testowa (zawiera _test suffix)."""
+    return "_test" in url.split("/")[-1].split("?")[0]
+
+
+if not _is_test_database(TEST_DATABASE_URL):
+    raise RuntimeError(
+        f"TEST_DATABASE_URL musi zawierać '_test' w nazwie bazy, otrzymano: {TEST_DATABASE_URL!r}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Engine i schema — tworzone raz na całą sesję pytest
 # ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Session-scoped event loop — wymaga tego asyncpg z session-scoped fixtures."""
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
+
 
 @pytest.fixture(scope="session")
 def anyio_backend():
@@ -45,28 +68,39 @@ def anyio_backend():
 @pytest_asyncio.fixture(scope="session")
 async def test_engine():
     """Async engine dla testowej bazy — tworzy i niszczy tabele raz na sesję."""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False, pool_pre_ping=True)
+    engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
         await conn.run_sync(Base.metadata.create_all)
     yield engine
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
     await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     """
-    Async session z rollbackiem po każdym teście.
-
-    Używa SAVEPOINT (nested transaction) żeby test nie modyfikował bazy trwale.
+    Async session izolowana przez transakcję na poziomie połączenia.
+    join_transaction_mode="create_savepoint" sprawia, że session.commit()
+    tworzy SAVEPOINT zamiast commitować zewnętrzną transakcję, dzięki
+    czemu po teście możemy wszystko wycofać.
     """
-    factory = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
-    async with factory() as s:
-        async with s.begin():
-            yield s
-            await s.rollback()
+    conn = await test_engine.connect()
+    await conn.begin()
+    s = AsyncSession(
+        bind=conn,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
+    try:
+        yield s
+    finally:
+        await s.close()
+        await conn.rollback()
+        await conn.close()
 
 
 # ---------------------------------------------------------------------------

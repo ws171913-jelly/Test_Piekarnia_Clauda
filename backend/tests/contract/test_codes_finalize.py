@@ -7,6 +7,8 @@ Weryfikuje:
 - nieważny token weryfikacji (422)
 - aktualizację salda w odpowiedzi
 """
+import uuid
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +30,7 @@ class TestFinalizeCodeContract:
         token, _, _, _, _ = await verify_code(
             session, code, gross_amount, "terminal-dev"
         )
+        await session.commit()
         return token
 
     async def test_success_returns_200(
@@ -65,7 +68,7 @@ class TestFinalizeCodeContract:
         session: AsyncSession,
         user: User,
     ):
-        """Saldo po finalizacji = saldo przed − rabat."""
+        """Saldo po finalizacji = saldo przed - rabat."""
         balance_before = float(user.current_balance)
         token = await self._generate_and_verify(session, user, gross_amount=100.0)
         resp = await http_client.post(
@@ -128,7 +131,6 @@ class TestFinalizeCodeContract:
         session: AsyncSession,
         user: User,
     ):
-        import uuid
         token = await self._generate_and_verify(session, user)
         resp = await http_client.post(
             "/api/v1/codes/finalize",

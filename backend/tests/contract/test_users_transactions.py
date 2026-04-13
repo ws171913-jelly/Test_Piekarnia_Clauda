@@ -17,9 +17,7 @@ async def _do_purchase(session: AsyncSession, user: User, amount: float = 50.0) 
     code, _ = await generate_code(session, user)
     token, *_ = await verify_code(session, code, amount, "terminal-dev")
     await finalize_transaction(session, token)
-    # Zresetuj cooldown dla kolejnych zakupów w tym samym teście
-    user.last_code_generated_at = None
-    await session.flush()
+    await session.commit()
 
 
 @pytest.mark.asyncio

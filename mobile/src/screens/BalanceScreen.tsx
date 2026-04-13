@@ -64,14 +64,31 @@ export default function BalanceScreen({ onGenerateCode, onViewHistory }: Props) 
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // When sync fails and cache is empty, `profile` stays null. Instead of
+  // rendering an infinite spinner, show an error state with a retry button.
   const session = userStore.getSession();
   const name = session?.hrEmployeeId ?? '';
 
   if (!profile && !refreshing) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
+      <ScrollView
+        contentContainerStyle={styles.center}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadData(true)}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        <Text style={styles.errorTitle}>Nie udało się pobrać danych</Text>
+        <Text style={styles.errorSubtitle}>
+          {networkError ? 'Sprawdź połączenie sieciowe i spróbuj ponownie.' : 'Brak danych w cache.'}
+        </Text>
+        <Pressable style={styles.retryButton} onPress={() => loadData(true)}>
+          <Text style={styles.retryButtonText}>Spróbuj ponownie</Text>
+        </Pressable>
+      </ScrollView>
     );
   }
 
@@ -228,7 +245,12 @@ export default function BalanceScreen({ onGenerateCode, onViewHistory }: Props) 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.surface },
   container: { paddingBottom: 100, backgroundColor: colors.surface },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
+
+  errorTitle: { fontSize: 24, fontWeight: '700', color: colors.onSurface, textAlign: 'center', marginBottom: spacing.md },
+  errorSubtitle: { fontSize: 14, color: colors.onSurfaceVariant, textAlign: 'center', marginBottom: spacing.xl },
+  retryButton: { backgroundColor: colors.primary, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.lg },
+  retryButtonText: { color: colors.onPrimary, fontWeight: '700', fontSize: 14 },
 
   topBar: {
     flexDirection: 'row',

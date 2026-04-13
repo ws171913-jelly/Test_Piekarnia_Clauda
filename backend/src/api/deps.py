@@ -11,11 +11,11 @@ from src.config import settings
 from src.database import get_session
 from src.models.user import User
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials, Security(bearer_scheme)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Security(bearer_scheme)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> User:
     """Walidacja JWT Bearer + sprawdzenie JTI względem bazy."""
@@ -24,6 +24,8 @@ async def get_current_user(
         detail="Nieprawidłowy lub wygasły token",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    if credentials is None:
+        raise credentials_exception
     try:
         payload = jwt.decode(
             credentials.credentials,
@@ -65,8 +67,13 @@ async def get_pos_terminal_id(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Nieznany klucz API terminala POS",
         )
-    # W produkcji pobierz terminal_id z bazy na podstawie klucza
-    return f"terminal-{x_pos_api_key.split('-')[-1]}"
+    # W produkcji pobierz terminal_id z bazy na podstawie klucza.
+    # Tu generujemy unikalny identyfikator z pełnego hasha API key,
+    # aby uniknąć kolizji przy różnych kluczach z tym samym suffixem.
+    import hashlib
+
+    key_hash = hashlib.sha256(x_pos_api_key.encode()).hexdigest()[:8]
+    return f"terminal-{key_hash}"
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]

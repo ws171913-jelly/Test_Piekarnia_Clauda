@@ -4,9 +4,10 @@ T064 — Zadanie cron: weryfikacja retencji transakcji.
 Alert gdy rekord transakcji starszy niż 24 miesiące nie jest zarchiwizowany.
 Uruchamiać raz na tydzień.
 """
+import calendar
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 
@@ -14,9 +15,21 @@ from src.database import async_sessionmaker
 from src.models.transaction import Transaction
 
 
-ARCHIVE_THRESHOLD_DAYS = 730  # 24 miesiące
+ARCHIVE_THRESHOLD_MONTHS = 24  # 24 miesiące (precyzyjnie, nie 730 dni)
 
 logger = logging.getLogger(__name__)
+
+
+async def _months_ago(months: int) -> datetime:
+    """Zwraca datę `months` miesięcy temu, obsługując lata przestępne."""
+    now = datetime.now(timezone.utc)
+    year = now.year
+    month = now.month - months
+    while month <= 0:
+        month += 12
+        year -= 1
+    day = min(now.day, calendar.monthrange(year, month)[1])
+    return now.replace(year=year, month=month, day=day)
 
 
 async def verify_transaction_retention() -> dict[str, int]:
@@ -29,7 +42,7 @@ async def verify_transaction_retention() -> dict[str, int]:
     Returns:
         Słownik z kluczem "overdue_count" — liczba rekordów wymagających archiwizacji.
     """
-    cutoff = datetime.now(timezone.utc) - timedelta(days=ARCHIVE_THRESHOLD_DAYS)
+    cutoff = await _months_ago(ARCHIVE_THRESHOLD_MONTHS)
 
     async with async_sessionmaker() as session:
         result = await session.execute(

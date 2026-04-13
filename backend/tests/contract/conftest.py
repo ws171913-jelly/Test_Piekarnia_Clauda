@@ -1,7 +1,10 @@
 """
 Fixtures dla testów kontraktowych — pełny stack HTTP z testową bazą.
 
-Nadpisuje zależność get_session w FastAPI, by używać testowej sesji.
+Strategia izolacji:
+- session commituje dane (FastAPI musi widzieć committed rows przez własne sesje)
+- FastAPI dostaje świeże sesje per-request (brak współdzielenia połączenia asyncpg)
+- po teście: TRUNCATE wszystkich tabel
 """
 import uuid
 from datetime import date, timedelta
@@ -10,31 +13,56 @@ from typing import AsyncGenerator
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import get_current_user, get_pos_terminal_id, get_session
+from src.api.deps import get_session
 from src.domain.auth import create_jwt, hash_pin
 from src.main import app
 from src.models.basket import Basket
 from src.models.user import User
 
 # ---------------------------------------------------------------------------
-# Import engine z globalnego conftest (session-scoped)
-# ---------------------------------------------------------------------------
-
-pytest_plugins = ["tests.conftest"]
-
-
-# ---------------------------------------------------------------------------
-# HTTP client z testową sesją
+# Nadpisanie session — commit zamiast savepoint
 # ---------------------------------------------------------------------------
 
 @pytest_asyncio.fixture
-async def http_client(session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """AsyncClient skierowany do FastAPI ASGI z testową sesją DB."""
+async def session(test_engine) -> AsyncGenerator[AsyncSession, None]:
+    """
+    Contract session — rzeczywiście commituje dane, żeby FastAPI mogło je
+    zobaczyć przez własne sesje.  Po teście: TRUNCATE wszystkich tabel.
+    """
+    async with AsyncSession(test_engine, expire_on_commit=False) as s:
+        yield s
+        await s.rollback()  # anuluj niezacommitowane resztki
+        async with s.begin():
+            await s.execute(
+                text(
+                    "TRUNCATE auth_codes, transactions, users, baskets"
+                    " RESTART IDENTITY CASCADE"
+                )
+            )
+
+
+# ---------------------------------------------------------------------------
+# HTTP client z testową bazą
+# ---------------------------------------------------------------------------
+
+@pytest_asyncio.fixture
+async def http_client(session: AsyncSession, test_engine) -> AsyncGenerator[AsyncClient, None]:
+    """
+    AsyncClient skierowany do FastAPI ASGI.
+
+    Commituje dane sesji testowej (basket, user), żeby FastAPI mogło je
+    zobaczyć.  FastAPI dostaje świeżą sesję per-request — brak współdzielenia
+    połączenia asyncpg między taskami asyncio.
+    """
+    # Commit danych ustawionych przez fixture basket/user
+    await session.commit()
 
     async def override_session() -> AsyncGenerator[AsyncSession, None]:
-        yield session
+        async with AsyncSession(test_engine, expire_on_commit=False) as s:
+            yield s
 
     app.dependency_overrides[get_session] = override_session
     try:
@@ -57,6 +85,7 @@ async def authed_client(
     jti = uuid.uuid4()
     user.current_jti = jti
     await session.flush()
+    await session.commit()  # jti musi być widoczne dla FastAPI
 
     token = create_jwt(user.id, jti)
     http_client.headers["Authorization"] = f"Bearer {token}"

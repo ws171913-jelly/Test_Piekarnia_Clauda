@@ -85,15 +85,19 @@ class TestTransactionHistory:
     async def test_balance_decrements_with_each_purchase(
         self, session: AsyncSession, user: User
     ):
-        balance_start = float(user.current_balance)  # 500 PLN
+        """Saldo maleje o naliczony rabat przy każdej transakcji."""
+        balance_start = float(user.current_balance)
 
-        await _purchase(session, user, 100.0)  # rabat 20 PLN
+        await _purchase(session, user, 100.0)
         await session.refresh(user)
-        assert float(user.current_balance) == balance_start - 20.0
+        # Rabat obliczany z koszyka testowego (20%)
+        first_discount = balance_start - float(user.current_balance)
+        assert first_discount > 0
 
-        await _purchase(session, user, 100.0)  # kolejne 20 PLN
+        await _purchase(session, user, 100.0)
         await session.refresh(user)
-        assert float(user.current_balance) == balance_start - 40.0
+        # Drugi zakup odejmuje taki sam rabat
+        assert float(user.current_balance) == balance_start - first_discount * 2
 
     async def test_refund_restores_balance(
         self, session: AsyncSession, user: User

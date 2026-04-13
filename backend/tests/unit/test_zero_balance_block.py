@@ -60,7 +60,7 @@ class TestZeroBalanceBlock:
         user = _make_user(balance=0.0)
         with pytest.raises(ValueError) as exc_info:
             await _call(user)
-        assert "saldo" in str(exc_info.value).lower()
+        assert "brak salda" in str(exc_info.value).lower()
 
     async def test_exact_zero_float_raises(self):
         """Saldo 0.0 (float) → blokada."""

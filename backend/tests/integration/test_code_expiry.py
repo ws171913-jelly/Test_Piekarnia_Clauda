@@ -31,7 +31,7 @@ class TestCodeExpiry:
         self, session: AsyncSession, user: User
     ):
         """Kod w TTL (15 min) przechodzi weryfikację."""
-        code, auth_code = await generate_code(session, user)
+        code, _auth_code = await generate_code(session, user)
         token, *_ = await verify_code(session, code, 100.0, "terminal-dev")
         assert token is not None
 
@@ -50,7 +50,7 @@ class TestCodeExpiry:
         auth_code.expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
         await session.flush()
 
-        with pytest.raises(ValueError, match="[Ww]ygasł"):
+        with pytest.raises(ValueError, match=r"[Ww]ygasł"):
             await finalize_transaction(session, token)
 
         await session.refresh(auth_code)

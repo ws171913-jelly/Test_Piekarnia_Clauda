@@ -19,6 +19,12 @@ from src.models.user import User
 
 
 async def seed() -> None:
+    if settings.environment not in {"development", "dev", "local"}:
+        raise RuntimeError(
+            "seed_dev_data.py can only run in development environment. "
+            f"Current environment: {settings.environment!r}"
+        )
+
     engine = create_async_engine(settings.database_url, echo=True)
     Session = async_sessionmaker(engine, expire_on_commit=False)
 

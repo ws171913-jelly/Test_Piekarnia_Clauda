@@ -18,6 +18,7 @@ from src.models.user import User
 class TestVerifyCodeContract:
     async def _generate(self, session: AsyncSession, user: User) -> str:
         code, _ = await generate_code(session, user)
+        await session.commit()
         return code
 
     async def test_success_returns_200(

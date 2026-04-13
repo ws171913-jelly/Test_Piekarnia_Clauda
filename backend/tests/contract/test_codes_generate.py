@@ -7,7 +7,10 @@ Weryfikuje:
 - blokadę zerowego salda (422)
 - wymaganie autoryzacji Bearer (401)
 """
+from datetime import datetime, timedelta, timezone
+
 import pytest
+import uuid
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,7 +49,6 @@ class TestGenerateCodeContract:
     ):
         resp = await authed_client.post("/api/v1/codes")
         data = resp.json()
-        import uuid
         # Nie rzuca wyjątku jeśli to prawidłowy UUID
         uuid.UUID(data["code_id"])
 
@@ -63,10 +65,10 @@ class TestGenerateCodeContract:
         user: User,
     ):
         user.current_balance = 0
-        await session.flush()
+        await session.commit()
         resp = await authed_client.post("/api/v1/codes")
         assert resp.status_code == 422
-        assert "saldo" in resp.json()["detail"].lower()
+        assert "sald" in resp.json()["detail"].lower()
 
     async def test_cooldown_returns_422(
         self,
@@ -74,11 +76,9 @@ class TestGenerateCodeContract:
         session: AsyncSession,
         user: User,
     ):
-        from datetime import datetime, timedelta, timezone
-
         # Symuluj niedawno wygenerowany kod
         user.last_code_generated_at = datetime.now(timezone.utc) - timedelta(minutes=5)
-        await session.flush()
+        await session.commit()
 
         resp = await authed_client.post("/api/v1/codes")
         assert resp.status_code == 422
@@ -89,7 +89,6 @@ class TestGenerateCodeContract:
     ):
         resp = await authed_client.post("/api/v1/codes")
         data = resp.json()
-        from datetime import datetime
         # Parsowalne jako datetime ISO
         dt = datetime.fromisoformat(data["expires_at"].replace("Z", "+00:00"))
         assert dt > datetime.now(dt.tzinfo)

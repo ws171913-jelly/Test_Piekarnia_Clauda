@@ -8,6 +8,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
+from src.domain.audit import (
+    log_account_locked,
+    log_login_failure,
+    log_login_success,
+    log_pin_changed,
+)
 from src.models.user import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -52,7 +58,13 @@ async def authenticate_user(
     Raises:
         ValueError: błędne dane, konto zablokowane, nieaktywne
     """
-    result = await session.execute(select(User).where(User.hr_employee_id == hr_employee_id))
+    # Pobierz użytkownika z blokadą wiersza — zapobiega wyścigom przy
+    # równoczesnych próbach logowania na to samo konto
+    result = await session.execute(
+        select(User)
+        .where(User.hr_employee_id == hr_employee_id)
+        .with_for_update()
+    )
     user = result.scalar_one_or_none()
 
     if user is None:
@@ -65,14 +77,17 @@ async def authenticate_user(
 
     if user.locked_until and user.locked_until > now:
         remaining = int((user.locked_until - now).total_seconds() / 60) + 1
+        log_account_locked(hr_employee_id, user.id, user.locked_until)
         raise ValueError(f"Konto zablokowane na {remaining} min")
 
     if not verify_pin(pin, user.pin_hash):
         user.login_attempts += 1
         if user.login_attempts >= MAX_LOGIN_ATTEMPTS:
             user.locked_until = now + timedelta(minutes=LOCKOUT_MINUTES)
+            log_account_locked(hr_employee_id, user.id, user.locked_until)
         await session.commit()
         remaining_attempts = max(0, MAX_LOGIN_ATTEMPTS - user.login_attempts)
+        log_login_failure(hr_employee_id, user.login_attempts, "błędny PIN")
         raise ValueError(f"Błędny PIN. Pozostało prób: {remaining_attempts}")
 
     # Sukces — zeruj licznik, wydaj nowy JTI
@@ -83,6 +98,7 @@ async def authenticate_user(
     await session.commit()
     await session.refresh(user)
 
+    log_login_success(hr_employee_id, user.id, new_jti)
     token = create_jwt(user.id, new_jti)
     return user, token
 

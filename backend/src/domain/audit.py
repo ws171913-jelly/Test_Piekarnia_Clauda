@@ -14,7 +14,7 @@ W środowisku produkcyjnym logi powinny być kierowane do zewnętrznego systemu
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Literal, Optional
 
 
 # Poziom AUDIT między INFO (20) a WARNING (30)
@@ -22,9 +22,9 @@ AUDIT_LEVEL = 25
 logging.addLevelName(AUDIT_LEVEL, "AUDIT")
 
 
-def _audit(logger: logging.Logger, msg: str, *args, **kwargs) -> None:
+def _audit(logger: logging.Logger, msg: str, *args: object, **kwargs: object) -> None:
     if logger.isEnabledFor(AUDIT_LEVEL):
-        logger._log(AUDIT_LEVEL, msg, args, **kwargs)
+        logger.log(AUDIT_LEVEL, msg, *args, **kwargs)
 
 
 audit_logger = logging.getLogger("bonusapp.audit")
@@ -97,7 +97,7 @@ def log_account_locked(
 def log_pin_changed(
     hr_employee_id: str,
     user_id: uuid.UUID,
-    source: str = "user",
+    source: Literal["user", "reset", "onboarding"] = "user",
 ) -> None:
     """Rejestruje zmianę PIN-u (source: 'user' | 'reset' | 'onboarding')."""
     _audit(

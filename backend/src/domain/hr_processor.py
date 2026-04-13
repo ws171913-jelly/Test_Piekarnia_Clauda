@@ -112,6 +112,7 @@ async def _handle_zmiana_koszyka(
         raise ValueError(f"Nieznany koszyk: {payload.hr_basket_id}")
 
     user.basket_id = basket.id
+    await session.flush()
 
 
 async def _handle_doladowanie(
@@ -126,6 +127,7 @@ async def _handle_doladowanie(
 
     user.current_balance = float(user.current_balance) + float(payload.amount_pln)  # type: ignore[assignment]
     user.balance_expiry_date = payload.expiry_date
+    await session.flush()
 
 
 async def _handle_koniec_okresu(
@@ -170,4 +172,5 @@ async def _handle_reset_pin(
     user.locked_until = None
     user.login_attempts = 0
     user.current_jti = None
+    await session.flush()
     return temp_pin

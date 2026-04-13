@@ -78,5 +78,5 @@ class TestUsersProfileContract:
         from datetime import date
         resp = await authed_client.get("/api/v1/users/me")
         date_str = resp.json()["balance_expiry_date"]
-        # Parsowalne jako ISO date
-        date.fromisoformat(date_str)
+        parsed_date = date.fromisoformat(date_str)
+        assert isinstance(parsed_date, date)
