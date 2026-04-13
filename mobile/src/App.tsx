@@ -130,6 +130,7 @@ export default function App() {
           <BalanceScreen
             onGenerateCode={() => setScreen('code')}
             onViewHistory={() => setScreen('history')}
+            onLogout={handleLogout}
           />
         ) : (
           <ProfileScreen

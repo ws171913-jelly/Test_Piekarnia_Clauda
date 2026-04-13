@@ -44,6 +44,7 @@ export default function CodeDisplayScreen({ onBack }: Props) {
       setSecondsLeft(remaining);
       setState('active');
 
+      progressAnim.setValue(1);
       Animated.timing(progressAnim, {
         toValue: 0,
         duration: remaining * 1000,

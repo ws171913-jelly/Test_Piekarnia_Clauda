@@ -31,7 +31,7 @@ services:
       JWT_TTL_HOURS: 8
       HMAC_SECRET: ${HMAC_SECRET:-change-hmac-secret-in-production}
       ENVIRONMENT: ${ENVIRONMENT:-development}
-      POS_API_KEYS: ${POS_API_KEYS:-pos-key-terminal-dev}
+      POS_API_KEYS: ${POS_API_KEYS:-pos-key-terminal-001,pos-key-terminal-002}
     ports:
       - "8000:8000"
     depends_on:

@@ -50,7 +50,7 @@ module.exports = {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
       __DEV__: process.env.NODE_ENV !== 'production',
       // Pusty string → żądania /api/... idą do tego samego originu i są proxowane przez devServer
-      process: { env: { API_BASE_URL: JSON.stringify('') } },
+      'process.env.API_BASE_URL': JSON.stringify(''),
     }),
   ],
 };

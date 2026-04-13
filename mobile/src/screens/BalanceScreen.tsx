@@ -16,6 +16,7 @@ import { syncAll } from '../services/sync';
 interface Props {
   onGenerateCode: () => void;
   onViewHistory: () => void;
+  onLogout?: () => void;
 }
 
 function formatPln(amount: number): string {
@@ -27,7 +28,7 @@ function formatDate(dateStr: string): string {
   return `${d}.${m}.${y}`;
 }
 
-export default function BalanceScreen({ onGenerateCode, onViewHistory }: Props) {
+export default function BalanceScreen({ onGenerateCode, onViewHistory, onLogout }: Props) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [recentTx, setRecentTx] = useState<TransactionListItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -112,6 +113,7 @@ export default function BalanceScreen({ onGenerateCode, onViewHistory }: Props) 
           style={styles.logoutBtn}
           onPress={() => {
             userStore.clearSession();
+            onLogout?.();
           }}
         >
           <Text style={styles.logoutIcon}>⎋</Text>

@@ -122,4 +122,5 @@ async def change_pin(
     await session.commit()
     await session.refresh(user)
 
+    log_pin_changed(user.hr_employee_id, user.id, "user")
     return create_jwt(user.id, new_jti)
