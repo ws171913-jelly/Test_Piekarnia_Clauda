@@ -9,11 +9,15 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bonusapp} -d ${POSTGRES_DB:-bonusapp}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
 
   api:
     build:
@@ -26,16 +30,21 @@ services:
       JWT_TTL_HOURS: 8
       HMAC_SECRET: ${HMAC_SECRET:-change-hmac-secret-in-production}
       ENVIRONMENT: ${ENVIRONMENT:-development}
+      POS_API_KEYS: ${POS_API_KEYS:-pos-key-terminal-dev}
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   postgres_data:

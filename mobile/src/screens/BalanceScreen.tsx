@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -8,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, fonts, radius, spacing } from '../theme';
 import { userStore, UserProfile, TransactionListItem } from '../store/userStore';
 import { syncAll } from '../services/sync';
 
@@ -118,7 +119,11 @@ export default function BalanceScreen({ onGenerateCode, onViewHistory }: Props) 
       {profile && (
         <View style={styles.balanceSection}>
           <View style={styles.balanceImageCard}>
-            <View style={styles.balanceImagePlaceholder} />
+            <Image
+              source={require('../assets/img/balance-card-bread.png')}
+              style={styles.balanceDesignImage}
+              resizeMode="cover"
+            />
             <View style={styles.balanceGradient} />
           </View>
           <View style={styles.balanceOverlay}>
@@ -155,6 +160,23 @@ export default function BalanceScreen({ onGenerateCode, onViewHistory }: Props) 
           </View>
         </View>
       )}
+
+      {/* Promo card — Zapraszaj znajomych */}
+      <View style={styles.promoCard}>
+        <View style={styles.promoImageCircle}>
+          <Image
+            source={require('../assets/img/coffee-circle.png')}
+            style={styles.promoImage}
+            resizeMode="cover"
+          />
+        </View>
+        <View style={styles.promoContent}>
+          <Text style={styles.promoTitle}>Zapraszaj znajomych</Text>
+          <Text style={styles.promoDesc}>
+            Poleć BonusApp kolegom z pracy i zyskaj dodatkowy rabat.
+          </Text>
+        </View>
+      </View>
 
       {/* Recent transactions */}
       <View style={styles.txSection}>
@@ -219,7 +241,7 @@ const styles = StyleSheet.create({
   },
   topBarName: { fontSize: 13, color: colors.onSurfaceVariant, fontWeight: '500' },
   topBarBrand: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 20,
     fontWeight: '700',
     fontStyle: 'italic',
@@ -230,7 +252,7 @@ const styles = StyleSheet.create({
 
   welcomeSection: { paddingHorizontal: spacing.lg, marginBottom: spacing.lg },
   welcomeTitle: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 34,
     fontWeight: '600',
     fontStyle: 'italic',
@@ -242,12 +264,12 @@ const styles = StyleSheet.create({
 
   balanceSection: { marginHorizontal: spacing.lg, marginBottom: spacing.lg },
   balanceImageCard: {
-    height: 160,
+    height: 200,
     borderRadius: radius.xl,
     overflow: 'hidden',
     backgroundColor: colors.surfaceContainerHigh,
   },
-  balanceImagePlaceholder: { flex: 1, backgroundColor: colors.primaryContainer, opacity: 0.3 },
+  balanceDesignImage: { flex: 1, width: '100%' },
   balanceGradient: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0, height: 100,
@@ -276,7 +298,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   balanceAmount: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 34,
     fontWeight: '700',
     color: colors.onSurface,
@@ -309,6 +331,39 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
+  promoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: radius.xl,
+    padding: spacing.md,
+    gap: spacing.md,
+    shadowColor: '#221a0e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 2,
+  },
+  promoImageCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: colors.surfaceContainerHighest,
+    flexShrink: 0,
+  },
+  promoImage: { flex: 1, width: '100%' },
+  promoContent: { flex: 1, gap: spacing.xs },
+  promoTitle: {
+    fontFamily: fonts.headline,
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.onSurface,
+  },
+  promoDesc: { fontSize: 12, color: colors.onSurfaceVariant, lineHeight: 18 },
   txSection: { paddingHorizontal: spacing.lg },
   txHeader: {
     flexDirection: 'row',
@@ -317,7 +372,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   txTitle: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 22,
     fontWeight: '600',
     color: colors.onSurface,
@@ -351,7 +406,7 @@ const styles = StyleSheet.create({
   txDetails: { flex: 1 },
   txType: { fontWeight: '700', color: colors.onSurface, fontSize: 14 },
   txDate: { fontSize: 11, color: colors.onSurfaceVariant, marginTop: 2 },
-  txAmount: { fontFamily: 'serif', fontSize: 16, fontWeight: '700' },
+  txAmount: { fontFamily: fonts.headline, fontSize: 16, fontWeight: '700' },
   txAmountDebit: { color: colors.error },
   txAmountCredit: { color: colors.primary },
   emptyTx: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },

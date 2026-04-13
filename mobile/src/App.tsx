@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Platform,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -7,6 +8,28 @@ import {
   View,
 } from 'react-native';
 import { colors, spacing } from './theme';
+
+function MatIcon({ name, filled, size = 24, color }: { name: string; filled?: boolean; size?: number; color?: string }) {
+  if (Platform.OS === 'web') {
+    return (
+      <span
+        className="material-symbols-outlined"
+        style={{
+          fontSize: size,
+          color: color ?? 'inherit',
+          fontVariationSettings: filled ? "'FILL' 1, 'wght' 400" : "'FILL' 0, 'wght' 400",
+          lineHeight: 1,
+          display: 'block',
+        }}
+      >
+        {name}
+      </span>
+    );
+  }
+  // Native fallback — keep emoji for now
+  const map: Record<string, string> = { dashboard: '🏠', history: '🕐', person: '👤' };
+  return <Text style={{ fontSize: size, color }}>{map[name] ?? name}</Text>;
+}
 import { userStore } from './store/userStore';
 
 import LoginScreen from './screens/LoginScreen';
@@ -121,19 +144,22 @@ export default function App() {
             style={[styles.tabItem, activeTab === 'dashboard' && styles.tabItemActive]}
             onPress={() => setActiveTab('dashboard')}
           >
-            <Text style={[styles.tabIcon, activeTab === 'dashboard' && styles.tabIconActive]}>
-              🏠
-            </Text>
+            <MatIcon
+              name="dashboard"
+              filled={activeTab === 'dashboard'}
+              size={24}
+              color={activeTab === 'dashboard' ? colors.onPrimary : colors.onSurfaceVariant}
+            />
             <Text style={[styles.tabLabel, activeTab === 'dashboard' && styles.tabLabelActive]}>
               Dashboard
             </Text>
           </Pressable>
 
           <Pressable
-            style={[styles.tabItem, false && styles.tabItemActive]}
+            style={styles.tabItem}
             onPress={() => setScreen('history')}
           >
-            <Text style={styles.tabIcon}>🕐</Text>
+            <MatIcon name="history" size={24} color={colors.onSurfaceVariant} />
             <Text style={styles.tabLabel}>Historia</Text>
           </Pressable>
 
@@ -141,9 +167,12 @@ export default function App() {
             style={[styles.tabItem, activeTab === 'profile' && styles.tabItemActive]}
             onPress={() => setActiveTab('profile')}
           >
-            <Text style={[styles.tabIcon, activeTab === 'profile' && styles.tabIconActive]}>
-              👤
-            </Text>
+            <MatIcon
+              name="person"
+              filled={activeTab === 'profile'}
+              size={24}
+              color={activeTab === 'profile' ? colors.onPrimary : colors.onSurfaceVariant}
+            />
             <Text style={[styles.tabLabel, activeTab === 'profile' && styles.tabLabelActive]}>
               Profil
             </Text>
@@ -158,10 +187,12 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.surface },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surface + 'cc',
     borderTopWidth: 1,
-    borderTopColor: colors.outlineVariant,
-    paddingBottom: spacing.md,
+    borderTopColor: colors.outlineVariant + '26',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingBottom: spacing.lg,
     paddingTop: spacing.sm,
     paddingHorizontal: spacing.md,
     shadowColor: '#221a0e',
@@ -175,20 +206,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.sm,
-    borderRadius: 12,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 999,
     gap: 2,
   },
   tabItemActive: {
     backgroundColor: colors.primary,
   },
-  tabIcon: { fontSize: 20 },
-  tabIconActive: {},
   tabLabel: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.onSurfaceVariant,
     letterSpacing: 1,
     textTransform: 'uppercase',
+    marginTop: 2,
   },
   tabLabelActive: { color: colors.onPrimary },
 });

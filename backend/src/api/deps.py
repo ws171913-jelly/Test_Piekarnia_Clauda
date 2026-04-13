@@ -13,13 +13,6 @@ from src.models.user import User
 
 bearer_scheme = HTTPBearer()
 
-# Klucze API terminalów POS — w produkcji z bazy / vault
-POS_API_KEYS: set[str] = {
-    "pos-key-terminal-001",
-    "pos-key-terminal-002",
-    "pos-key-terminal-dev",
-}
-
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Security(bearer_scheme)],
@@ -67,7 +60,7 @@ async def get_pos_terminal_id(
     x_pos_api_key: Annotated[str | None, Header(alias="X-POS-API-Key")] = None,
 ) -> str:
     """Walidacja klucza API terminala POS."""
-    if x_pos_api_key is None or x_pos_api_key not in POS_API_KEYS:
+    if x_pos_api_key is None or x_pos_api_key not in settings.pos_api_keys_set:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Nieznany klucz API terminala POS",

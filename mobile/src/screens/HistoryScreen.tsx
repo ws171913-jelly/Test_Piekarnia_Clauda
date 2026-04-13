@@ -2,13 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, fonts, radius, spacing } from '../theme';
 import { fetchTransactions, TransactionItem } from '../services/api';
 import { userStore } from '../store/userStore';
 
@@ -136,7 +137,16 @@ export default function HistoryScreen({ onBack }: Props) {
     if (loading) return null;
     return (
       <View style={styles.emptyBox}>
-        <Text style={styles.emptyIcon}>🍞</Text>
+        <View style={styles.emptyImageCard}>
+          <Image
+            source={require('../assets/img/bread-basket.png')}
+            style={styles.emptyImage}
+            resizeMode="cover"
+          />
+          <View style={styles.emptyCiszaBadge}>
+            <Text style={styles.emptyCiszaText}>Cisza w piekarni</Text>
+          </View>
+        </View>
         <Text style={styles.emptyTitle}>Brak transakcji</Text>
         <Text style={styles.emptyDesc}>
           {filter === 'ALL'
@@ -164,7 +174,13 @@ export default function HistoryScreen({ onBack }: Props) {
           <Text style={styles.backIcon}>←</Text>
         </Pressable>
         <Text style={styles.headerTitle}>Historia transakcji</Text>
-        <View style={styles.backBtn} />
+        <View style={styles.headerAvatarCircle}>
+          <Image
+            source={require('../assets/img/history-avatar.png')}
+            style={styles.headerAvatar}
+            resizeMode="cover"
+          />
+        </View>
       </View>
 
       {/* Summary */}
@@ -221,10 +237,19 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
     backgroundColor: colors.surface,
   },
-  backBtn: { width: 40 },
+  backBtn: { width: 40, alignItems: 'center' },
+  headerAvatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.outlineVariant,
+  },
+  headerAvatar: { flex: 1, width: '100%' },
   backIcon: { fontSize: 22, color: colors.primary },
   headerTitle: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 20,
     fontWeight: '600',
     fontStyle: 'italic',
@@ -276,7 +301,7 @@ const styles = StyleSheet.create({
   txBody: { flex: 1, gap: 2 },
   txTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   txType: { fontWeight: '700', fontSize: 14, color: colors.onSurface },
-  txAmount: { fontFamily: 'serif', fontSize: 15, fontWeight: '700' },
+  txAmount: { fontFamily: fonts.headline, fontSize: 15, fontWeight: '700' },
   debit: { color: colors.error },
   credit: { color: colors.primary },
   txBottomRow: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -286,16 +311,41 @@ const styles = StyleSheet.create({
   txAmountDetail: { fontSize: 10, color: colors.outline },
   emptyBox: {
     alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    gap: spacing.md,
+    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.lg,
   },
-  emptyIcon: { fontSize: 48 },
-  emptyTitle: {
-    fontFamily: 'serif',
-    fontSize: 22,
+  emptyImageCard: {
+    width: '100%',
+    height: 220,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    backgroundColor: colors.surfaceContainerHigh,
+  },
+  emptyImage: { flex: 1, width: '100%' },
+  emptyCiszaBadge: {
+    position: 'absolute',
+    bottom: spacing.md,
+    right: spacing.md,
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  emptyCiszaText: {
+    color: colors.onPrimary,
+    fontFamily: fonts.headline,
+    fontStyle: 'italic',
+    fontSize: 13,
     fontWeight: '600',
-    color: colors.primary,
   },
-  emptyDesc: { fontSize: 13, color: colors.onSurfaceVariant, textAlign: 'center' },
+  emptyTitle: {
+    fontFamily: fonts.headline,
+    fontSize: 26,
+    fontWeight: '700',
+    color: colors.onSurface,
+    textAlign: 'center',
+  },
+  emptyDesc: { fontSize: 13, color: colors.onSurfaceVariant, textAlign: 'center', lineHeight: 20 },
   footerLoader: { paddingVertical: spacing.xl, alignItems: 'center' },
 });

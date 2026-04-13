@@ -1,92 +1,361 @@
-# Design System Document: The Editorial Professional
+# Design System — BonusApp (Artisan Hearth)
 
-## 1. Overview & Creative North Star
-**Creative North Star: The Sovereign Ledger**
-This design system moves away from the sterile, "template-heavy" nature of corporate fintech and toward a high-end editorial experience. We are not building a simple utility; we are building a platform of recognition. The aesthetic is "Sovereign"—authoritative, calm, and premium. 
-
-To achieve this, we break the rigid mobile grid. We utilize **intentional asymmetry**, where text heavy blocks are balanced by expansive white space. We favor **overlapping elements** to create a sense of physical assembly, and we leverage a dramatic typography scale to ensure the "Bonus" feels like an event, not just a line item. This system is designed specifically for the retail environment: high-legibility for fast-paced shifts, and large touch targets for effortless one-handed interaction.
+Dokument opisuje obowiązujące zasady wizualne. Wszystkie nowe ekrany i komponenty **muszą** być z nimi zgodne.
+Źródło prawdy dla kolorów, odstępów i promieni zaokrągleń jest `mobile/src/theme.ts`.
 
 ---
 
-## 2. Colors & Tonal Depth
-Our palette is anchored by a deep, authoritative Dark Green (`primary: #00502e`), conveying stability and growth. 
+## 1. Motyw i nastrój
 
-### The "No-Line" Rule
-**Explicit Instruction:** Designers are prohibited from using 1px solid borders to section content. Traditional "boxes" make an app feel dated and cramped. Boundaries must be defined solely through background color shifts or tonal transitions.
-*   *Implementation:* A card (`surface-container-lowest`) sits on a background (`surface-container-low`) to create separation.
+Aplikacja dla pracowników rzemieślniczej piekarni. Klimat: ciepły, organiczny, premium — jak ręcznie zrobiony chleb w papierowej torebce. Odwołania wizualne do papieru, faktury chleba, naturalnych barw pszenicy i kawy.
 
-### Surface Hierarchy & Nesting
-Treat the UI as a series of stacked, premium paper stocks.
-*   **Base:** `surface` (#f8f9fa)
-*   **De-emphasized zones:** `surface-container-low` (#f3f4f5)
-*   **Interactive Cards:** `surface-container-lowest` (#ffffff)
-*   **Elevated Overlays:** `surface-bright` (#f8f9fa)
-
-### The "Glass & Gradient" Rule
-To elevate the experience beyond "standard" Material Design:
-*   **Glassmorphism:** For floating headers or navigation bars, use `surface` at 80% opacity with a `20px` backdrop-blur. This keeps the user grounded in their scroll position.
-*   **Signature Textures:** Main CTAs should never be flat. Apply a subtle linear gradient from `primary` (#00502e) to `primary_container` (#006b3f) at a 135-degree angle to add "soul" and a tactile, metallic quality.
+**Nie robimy** sterylnej aplikacji korporacyjnej. **Robimy** narzędzie, które pracownik chce wyjąć z kieszeni.
 
 ---
 
-## 3. Typography
-We use a dual-typeface system to balance editorial character with functional clarity.
+## 2. Kolory
 
-*   **Display & Headlines (Public Sans):** Used for "The Moment." When an employee receives a bonus, we use `display-lg` to make the numbers feel monumental. Public Sans provides a sturdy, corporate-yet-modern foundation.
-*   **Body & Labels (Inter):** Inter is our workhorse. Its tall x-height ensures that even at `body-sm` (0.75rem), retail employees can read terms and conditions in low-light backrooms or bright storefronts.
+Paleta pochodzi z systemu Material You — `Artisan Hearth`. Kody są ostateczne; nie wolno używać innych wartości hex.
 
-**Hierarchy as Identity:** 
-High contrast is mandatory. Pair a `headline-lg` title with a `body-md` description. The gap in scale creates an editorial "look" that guides the eye immediately to the most important data point.
+```ts
+// mobile/src/theme.ts → colors
+primary:                '#6c593a'   // ciepły brąz — główna marka
+onPrimary:              '#ffffff'
+primaryContainer:       '#867151'
+primaryFixed:           '#f9dfb7'
+primaryFixedDim:        '#dcc39d'
+onPrimaryFixed:         '#261902'
+inversePrimary:         '#dcc39d'
+
+secondary:              '#425e90'   // niebieski akcent
+onSecondary:            '#ffffff'
+secondaryContainer:     '#abc7ff'
+onSecondaryContainer:   '#365283'
+
+error:                  '#ba1a1a'
+onError:                '#ffffff'
+errorContainer:         '#ffdad6'
+onErrorContainer:       '#93000a'
+
+surface:                '#fff8f3'   // tło aplikacji — ciepła biel
+onSurface:              '#221a0e'   // tekst główny — nie czysty czarny
+onSurfaceVariant:       '#4d463c'   // tekst pomocniczy
+
+surfaceContainerLowest: '#ffffff'
+surfaceContainerLow:    '#fff2e3'   // karty, formularze
+surfaceContainer:       '#fcebd8'
+surfaceContainerHigh:   '#f6e6d2'
+surfaceContainerHighest:'#f0e0cd'   // pola input, awatary
+surfaceDim:             '#e8d8c4'
+
+outline:                '#7e766b'
+outlineVariant:         '#d0c5b8'   // delikatne obramowania / separatory
+```
+
+### Zasady użycia kolorów
+
+- Tło ekranów: zawsze `colors.surface` (`#fff8f3`).
+- Karty i sekcje formularza: `colors.surfaceContainerLow`.
+- Pola tekstowe (input): `colors.surfaceContainerHighest`.
+- Akcenty niebieskie (`secondary`, `secondaryContainer`) — tylko dla rabatów i oznaczeń "Zakup".
+- Nigdy nie używaj czystego czarnego (`#000000`). Tekst główny to `colors.onSurface`.
+- Obramowania jawne są **zabronione**. Separację tworzysz przez zmianę koloru tła (surface hierarchy).
+  Jedynym wyjątkiem jest `borderLeftWidth: 4` dla banerów błędów (lewa krawędź w kolorze `colors.error`).
 
 ---
 
-## 4. Elevation & Depth
-Depth is not achieved through shadows alone, but through **Tonal Layering.**
+## 3. Typografia
 
-### The Layering Principle
-Stacking tiers creates natural depth. 
-*   *Example:* Place a `surface-container-lowest` card (Pure White) onto a `surface-container` (#edeeef) background. The contrast provides all the "lift" required.
+### Fonty (Google Fonts — załadowane w `mobile/public/index.html`)
 
-### Ambient Shadows
-Shadows must be "atmospheric." 
-*   **Formula:** Blur: 24px–40px | Opacity: 4%–6% | Color: Derived from `on-surface` (#191c1d). 
-*   Avoid dark grey drop shadows; they muddy the "Light/Trusted" aesthetic.
+```ts
+// mobile/src/theme.ts → fonts
+fonts.headline = 'Newsreader'          // szeryfowy, nagłówki i tytuły
+fonts.body     = "'Plus Jakarta Sans'" // bezszeryfowy, teksty i etykiety
+```
 
-### The "Ghost Border" Fallback
-If a layout requires a border for accessibility (e.g., in high-glare environments), use a **Ghost Border**:
-*   `outline-variant` (#bec9bf) at **15% opacity**. It should be felt, not seen.
+Google Fonts URL (jeden request dla wszystkich fontów):
+```
+https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0&display=swap
+```
 
----
+### Zastosowanie
 
-## 5. Components
+| Zastosowanie | Font | Styl | Rozmiar |
+|---|---|---|---|
+| Główny tytuł ekranu (np. "Witaj, Jan") | `fonts.headline` | italic, weight 600–700 | 28–42 |
+| Nagłówki sekcji (np. "Ostatnie transakcje") | `fonts.headline` | weight 600–700 | 20–26 |
+| Nazwa marki "BonusApp" | `fonts.headline` | italic, weight 700 | 20–42 |
+| Kwota pieniężna (saldo, transakcja) | `fonts.headline` | weight 700 | 16–34 |
+| Tytuł karty, podpis karty | `fonts.headline` | weight 600–700 | 17–24 |
+| Etykiety UPPERCASE (np. "DOSTĘPNE SALDO") | brak (system) | weight 700, letterSpacing ≥ 2 | 9–11 |
+| Tekst pomocniczy, opisy | brak (system) | weight 400–500 | 11–14 |
+| Przyciski | brak (system) | weight 700, letterSpacing 1 | 13–15 |
+| Kod OTP (jednorazowy) | `'monospace'` (`'Courier New'`) | weight 700, letterSpacing 8 | 44 |
 
-### Buttons (The "One-Handed" Standard)
-*   **Primary:** Gradient (`primary` to `primary_container`), `xl` (0.75rem) roundedness. Minimum height: 56px to accommodate one-handed thumb taps.
-*   **Secondary:** No fill. `Ghost Border` with `on_secondary_fixed_variant` text.
-*   **States:** On press, increase depth by shifting from a gradient to a solid `primary_container` fill.
-
-### Cards & Lists (The "Breathable" Rule)
-*   **Forbidden:** Divider lines. 
-*   **Allowed:** Use 16px–24px of vertical white space (from our spacing scale) to separate list items. 
-*   **Grouping:** Use `surface-container-low` as a "well" to group related list items together.
-
-### Input Fields
-*   **Aesthetic:** "Understated Elegance." Use a `surface-container-highest` fill with no border. Upon focus, transition to a `primary` (2px) bottom-accent line only.
-*   **Touch Targets:** All inputs must maintain a 56px height.
-
-### Recognition Chips
-*   Used for "Bonus Types" (e.g., Performance, Anniversary). Use `secondary_container` with `on_secondary_container` text. Use `full` (9999px) roundedness to contrast against the `xl` (0.75rem) corners of cards.
+**Zasady:**
+- `fontFamily: 'serif'` — nigdy nie używaj. Zawsze importuj `fonts` z `../theme` i użyj `fonts.headline`.
+- Nagłówki tytułowe (nazwa ekranu w headerze) zawsze `fontStyle: 'italic'`.
+- Etykiety kategorii (np. "NUMER PRACOWNIKA", "DOSTĘPNE SALDO") — uppercase + letterSpacing, bez specjalnego fontu.
 
 ---
 
-## 6. Do's and Don'ts
+## 4. Odstępy (`spacing`)
 
-### Do
-*   **Do** use asymmetrical margins. A wider left-hand margin for headlines creates a sophisticated, editorial "gut" in the layout.
-*   **Do** prioritize WCAG AA contrast. Ensure `on_primary` text is always used over `primary` backgrounds.
-*   **Do** use `surface-tint` for subtle brand moments, like the background of a success state icon.
+```ts
+spacing.xs  = 4
+spacing.sm  = 8
+spacing.md  = 16
+spacing.lg  = 24
+spacing.xl  = 32
+spacing.xxl = 48
+```
 
-### Don't
-*   **Don't** use 100% black. Use `on_surface` (#191c1d) for all text to maintain a premium, "ink-on-paper" feel.
-*   **Don't** use standard "Material Blue" for links. Use `primary` (#00502e) or `tertiary` (#782b31) for a bespoke corporate feel.
-*   **Don't** crowd the screen. If a retail employee can't parse the screen in 2 seconds, there is too much information. Increase the "Surface Hierarchy" nesting to hide secondary details.
+- Padding główny ekranów: `paddingHorizontal: spacing.lg` (24).
+- Padding kart/sekcji: `padding: spacing.xl` (32) lub `spacing.lg` (24).
+- Odstępy między elementami w kartach: `gap: spacing.md` lub `spacing.lg`.
+- `paddingBottom` listy scroll: ≥ 100, żeby ostatni element nie chował się za dolny pasek.
+
+---
+
+## 5. Zaokrąglenia (`radius`)
+
+```ts
+radius.sm   = 4
+radius.md   = 8
+radius.lg   = 12
+radius.xl   = 16
+radius.full = 9999
+```
+
+- Karty, kontenery sekcji: `radius.xl` (16).
+- Przyciski CTA, inputy: `radius.lg` (12) lub `radius.xl` (16).
+- Chipy (filtry, odznaki): `radius.full` (9999).
+- Awatary i kółka ikon: `borderRadius = połowa szerokości` (np. `width: 44, borderRadius: 22`).
+- Dolny pasek nawigacji: `borderTopLeftRadius: 32, borderTopRightRadius: 32`.
+
+---
+
+## 6. Cienie
+
+Cienie są "atmosferyczne" — rozmyte, bardzo lekkie. Wzorzec:
+
+```ts
+shadowColor: '#221a0e',
+shadowOffset: { width: 0, height: 8–12 },
+shadowOpacity: 0.04–0.08,
+shadowRadius: 16–40,
+elevation: 2–8,
+```
+
+- Ciemny cień (`#000`) — zabroniony.
+- Duże karty (saldo, kod): `shadowRadius: 40, shadowOpacity: 0.06–0.08`.
+- Małe karty i chipy: `shadowRadius: 16, shadowOpacity: 0.04–0.05`.
+
+---
+
+## 7. Struktura ekranu
+
+### Header (górna belka)
+
+Każdy ekran podrzędny (nie dashboard) ma header:
+```tsx
+<View style={styles.header}>
+  <Pressable onPress={onBack} style={styles.backBtn}>
+    <Text style={styles.backIcon}>←</Text>  {/* fontSize: 22, color: colors.primary */}
+  </Pressable>
+  <Text style={styles.headerTitle}>Tytuł ekranu</Text>  {/* fonts.headline, italic */}
+  <View style={styles.backBtn} />  {/* placeholder dla symetrii LUB avatar/ikona */}
+</View>
+```
+
+Styl headera:
+```ts
+paddingHorizontal: spacing.lg,
+paddingTop: spacing.xl + spacing.md,  // dużo miejsca od góry
+paddingBottom: spacing.md,
+backgroundColor: colors.surface,
+```
+
+### Dolny pasek nawigacji (`App.tsx`)
+
+- 3 zakładki: Dashboard (`dashboard`), Historia (`history`), Profil (`person`).
+- Ikony: **Material Symbols Outlined** przez komponent `MatIcon` (span na web, emoji na native).
+- Aktywna zakładka: `backgroundColor: colors.primary`, ikona wypełniona (`FILL 1`), kolor `colors.onPrimary`.
+- Nieaktywna: kolor ikon `colors.onSurfaceVariant`.
+- Etykiety: uppercase, `letterSpacing: 1`, `fontSize: 9`.
+
+### Hero image (nagłówek z obrazkiem)
+
+Wzorzec stosowany w ekranach logowania, zmiany PINu:
+```tsx
+<View style={{ height: 180–200, borderRadius: radius.xl, overflow: 'hidden' }}>
+  <Image source={...} style={{ flex: 1, width: '100%' }} resizeMode="cover" />
+  <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 60–80,
+                 backgroundColor: colors.surface, opacity: 0.6 }} />
+</View>
+```
+Nad zdjęciem — karta `surfaceContainerLow` z ujemnym `marginTop` (nakładka).
+
+---
+
+## 8. Karty i komponenty
+
+### Karta salda (BalanceScreen)
+
+- Obraz tła (`balance-card-bread.png`), height: 200, `borderRadius: radius.xl`.
+- Nakładka gradientu: `backgroundColor: colors.primary, opacity: 0.7`, od dołu ~100px.
+- Overlay card: `marginTop: -80`, `borderRadius: radius.xl`, `surfaceContainerHighest`.
+
+### Karta transakcji
+
+```tsx
+<View style={{ flexDirection: 'row', backgroundColor: colors.surfaceContainerLow,
+               borderRadius: radius.xl, padding: spacing.md, gap: spacing.md }}>
+  <View style={{ width: 44, height: 44, borderRadius: 22,
+                 backgroundColor: colors.surfaceContainerHighest }}>
+    <Text>{isRefund ? '↩️' : '🛒'}</Text>
+  </View>
+  {/* typ + data + kwota */}
+</View>
+```
+- Zakup: kwota czerwona (`colors.error`), prefiks `-`.
+- Zwrot: kwota zielona/primary (`colors.primary`), prefiks `+`.
+
+### Promo card
+
+```tsx
+<View style={{ flexDirection: 'row', backgroundColor: colors.surfaceContainerLow,
+               borderRadius: radius.xl, padding: spacing.md }}>
+  <View style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 4,
+                 borderColor: colors.surfaceContainerHighest, overflow: 'hidden' }}>
+    <Image ... />
+  </View>
+  <View>{/* tytuł (fonts.headline) + opis */}</View>
+</View>
+```
+
+### Banery błędów i blokad
+
+Error (nie-krytyczny):
+```ts
+flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+backgroundColor: colors.errorContainer + '66',  // 40% opacity
+borderRadius: radius.md,
+borderLeftWidth: 4, borderLeftColor: colors.error,
+```
+
+Blokada konta:
+```ts
+flexDirection: 'row', backgroundColor: colors.surfaceContainerLow,
+borderRadius: radius.xl, borderWidth: 1, borderColor: colors.error + '1a',
+```
+Z ikoną w kółku `backgroundColor: colors.error + '1a'`.
+
+### Przyciski CTA
+
+Główny:
+```ts
+backgroundColor: colors.primary, borderRadius: radius.lg,
+paddingVertical: spacing.md + 2,  // ~18px
+color: colors.onPrimary, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase',
+```
+Wyłączony: `opacity: 0.4–0.5`.
+
+Drugorzędny (powrót):
+```ts
+backgroundColor: colors.surfaceContainer, borderRadius: radius.lg,
+color: colors.primary, fontWeight: '700',
+```
+
+### Pola tekstowe
+
+```ts
+backgroundColor: colors.surfaceContainerHighest,
+borderRadius: radius.xl, padding: spacing.md,
+flexDirection: 'row', alignItems: 'center',
+// input: fontSize: 16–20, color: colors.onSurface
+```
+
+Wariant "minimalistyczny" (LoginScreen): brak ramki, tylko `inputUnderline` — `height: 2, backgroundColor: colors.outlineVariant, opacity: 0.3`.
+
+---
+
+## 9. Ikony
+
+### Material Symbols Outlined
+
+Używane w dolnym pasku i interfejsie webowym. Komponent `MatIcon` w `App.tsx`:
+```tsx
+// Web:
+<span className="material-symbols-outlined"
+  style={{ fontVariationSettings: filled ? "'FILL' 1, 'wght' 400" : "'FILL' 0, 'wght' 400" }}>
+  {name}
+</span>
+
+// Native: emoji fallback
+```
+
+Klasa CSS `.material-symbols-outlined` musi być zadeklarowana w `public/index.html`.
+
+### Emoji jako ikony stanu
+
+Dopuszczalne dla stanu (błąd, oczekiwanie, sukces) i ikonek listy transakcji:
+`⚠️` błąd, `⏳` karencja, `↩️` zwrot, `🛒` zakup, `🔒` blokada, `⎋` wyloguj.
+
+---
+
+## 10. Obrazy (`mobile/src/assets/img/`)
+
+Wszystkie obrazy w jednym katalogu — nie tworzyć podkatalogów.
+
+| Plik | Użycie |
+|---|---|
+| `balance-card-bread.png` | karta salda (BalanceScreen) |
+| `bread-basket.png` | pusty stan historii (HistoryScreen) |
+| `change-pin-header.png` | hero ChangePinScreen |
+| `code-card-texture.png` | banner aktywnego kodu (CodeDisplayScreen) |
+| `code-no-balance-bowl.png` | stan braku salda (CodeDisplayScreen) |
+| `coffee-circle.png` | promo card (BalanceScreen) |
+| `hero-bakery.png` | hero LoginScreen |
+| `history-avatar.png` | avatar w headerze historii |
+
+Nowe obrazy: umieszczać w `mobile/src/assets/img/`, importować przez `require('../assets/img/nazwa.png')`.
+
+---
+
+## 11. Web (react-native-web)
+
+Aplikacja działa w przeglądarce przez webpack + react-native-web. Wymagania:
+
+`public/index.html` musi zawierać:
+```html
+<!-- Google Fonts — jeden request -->
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@...&family=Plus+Jakarta+Sans:...&family=Material+Symbols+Outlined:...&display=swap" rel="stylesheet" />
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; padding: 0; background: #fff8f3; -webkit-tap-highlight-color: transparent; }
+  #root { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+  .material-symbols-outlined { font-family: 'Material Symbols Outlined'; ... }
+</style>
+```
+
+Aplikacja musi zajmować 100% okna przeglądarki. Jeśli `flex: 1` nie działa — sprawdź `height: 100%` na `html`, `body`, `#root`.
+
+---
+
+## 12. Checklist dla nowego ekranu
+
+Przed oddaniem ekranu sprawdź:
+
+- [ ] Import: `import { colors, fonts, radius, spacing } from '../theme'`
+- [ ] Tło: `backgroundColor: colors.surface`
+- [ ] Fonty nagłówków: `fontFamily: fonts.headline` (nigdy `'serif'`)
+- [ ] Fonty body: brak jawnego `fontFamily` (system) lub `fontFamily: fonts.body`
+- [ ] Cień: `shadowColor: '#221a0e'`, opacity ≤ 0.08
+- [ ] Brak czystego czarnego w kolorach tekstu lub tła
+- [ ] Brak jawnych obramowań (poza wyjątkami: baner błędu, awatar z obwódką)
+- [ ] Header podrzędny: strzałka `←`, tytuł italic `fonts.headline`, placeholder lub ikona po prawej
+- [ ] Dolny padding listy: ≥ 100 (`paddingBottom: 100`)
+- [ ] Obrazy: w `mobile/src/assets/img/`, `resizeMode="cover"`

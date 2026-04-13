@@ -18,7 +18,8 @@ module.exports = {
       },
       {
         test: /\.(png|jpe?g|gif|svg)$/i,
-        use: [{ loader: 'url-loader', options: { limit: 8192 } }],
+        type: 'asset',
+        parser: { dataUrlCondition: { maxSize: 8192 } },
       },
     ],
   },
@@ -29,15 +30,27 @@ module.exports = {
     extensions: ['.web.js', '.js', '.web.ts', '.ts', '.web.tsx', '.tsx'],
   },
   devServer: {
-    historyApiFallback: true,
+    static: {
+      directory: path.join(__dirname, 'public'),
+    },
+    historyApiFallback: {
+      index: '/index.html',
+    },
     hot: true,
+    proxy: [
+      {
+        context: ['/api'],
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    ],
   },
   plugins: [
-    // ... inne pluginy (np. HtmlWebpackPlugin)
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
       __DEV__: process.env.NODE_ENV !== 'production',
-      process: { env: {} } // to naprawia błąd "process is not defined"
+      // Pusty string → żądania /api/... idą do tego samego originu i są proxowane przez devServer
+      process: { env: { API_BASE_URL: JSON.stringify('') } },
     }),
   ],
 };

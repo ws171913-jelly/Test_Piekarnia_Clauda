@@ -60,3 +60,8 @@ export const radius = {
   xl: 16,
   full: 9999,
 };
+
+export const fonts = {
+  headline: 'Newsreader',
+  body: "'Plus Jakarta Sans'",
+};

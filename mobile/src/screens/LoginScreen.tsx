@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, fonts, radius, spacing } from '../theme';
 import { login } from '../services/api';
 import { userStore } from '../store/userStore';
 
@@ -64,7 +65,11 @@ export default function LoginScreen({ onLoginSuccess }: Props) {
         {/* Brand header */}
         <View style={styles.header}>
           <View style={styles.imageCard}>
-            <View style={styles.imagePlaceholder} />
+            <Image
+              source={require('../assets/img/hero-bakery.png')}
+              style={styles.designImage}
+              resizeMode="cover"
+            />
             <View style={styles.imageGradient} />
           </View>
           <View style={styles.brandSection}>
@@ -78,9 +83,11 @@ export default function LoginScreen({ onLoginSuccess }: Props) {
           {/* Error/lock banner */}
           {isLocked && (
             <View style={styles.lockBanner}>
-              <Text style={styles.lockIcon}>🔒</Text>
+              <View style={styles.lockIconCircle}>
+                <Text style={styles.lockIcon}>🔒</Text>
+              </View>
               <View style={styles.lockTextBox}>
-                <Text style={styles.lockTitle}>Konto zablokowane</Text>
+                <Text style={styles.lockTitle}>Konto zablokowane na 15 minut</Text>
                 <Text style={styles.lockDesc}>
                   Po 5 nieudanych próbach konto zostało zablokowane na 15 minut.
                 </Text>
@@ -90,6 +97,7 @@ export default function LoginScreen({ onLoginSuccess }: Props) {
 
           {error && !isLocked && (
             <View style={styles.errorBanner}>
+              <Text style={styles.errorIcon}>⚠</Text>
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
@@ -181,9 +189,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.surfaceContainerHigh,
   },
-  imagePlaceholder: {
+  designImage: {
     flex: 1,
-    backgroundColor: colors.surfaceContainerHighest,
+    width: '100%',
   },
   imageGradient: {
     position: 'absolute',
@@ -196,7 +204,7 @@ const styles = StyleSheet.create({
   },
   brandSection: { alignItems: 'center', marginTop: -spacing.xxl },
   brandTitle: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 42,
     fontWeight: '700',
     fontStyle: 'italic',
@@ -224,32 +232,56 @@ const styles = StyleSheet.create({
   },
   lockBanner: {
     flexDirection: 'row',
-    backgroundColor: colors.errorContainer,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    gap: spacing.md,
     alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: colors.error + '1a',
+    shadowColor: '#221a0e',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
   },
-  lockIcon: { fontSize: 20 },
+  lockIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.error + '1a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  lockIcon: { fontSize: 18 },
   lockTextBox: { flex: 1 },
   lockTitle: {
-    color: colors.onErrorContainer,
+    color: colors.onSurface,
     fontWeight: '700',
     fontSize: 14,
   },
   lockDesc: {
-    color: colors.onErrorContainer,
+    color: colors.onSurfaceVariant,
     fontSize: 12,
     marginTop: 2,
     lineHeight: 18,
   },
   errorBanner: {
-    backgroundColor: colors.errorContainer,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.errorContainer + '66',
     borderRadius: radius.md,
-    padding: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.error,
   },
+  errorIcon: { fontSize: 16, color: colors.error },
   errorText: {
-    color: colors.onErrorContainer,
+    flex: 1,
+    color: colors.error,
     fontSize: 13,
     fontWeight: '600',
   },

@@ -2,12 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Image,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, fonts, radius, spacing } from '../theme';
 import { generateCode } from '../services/api';
 import { userStore } from '../store/userStore';
 
@@ -118,8 +119,20 @@ export default function CodeDisplayScreen({ onBack }: Props) {
 
         {state === 'no_balance' && (
           <View style={styles.statusCard}>
-            <View style={styles.statusIconCircle}>
-              <Text style={styles.statusIcon}>💸</Text>
+            {/* Bowl image with stacked paper effect */}
+            <View style={styles.noBalanceImageWrapper}>
+              <View style={styles.noBalancePaperBack} />
+              <View style={styles.noBalancePaperFront} />
+              <View style={styles.noBalanceImageContainer}>
+                <Image
+                  source={require('../assets/img/code-no-balance-bowl.png')}
+                  style={styles.noBalanceImage}
+                  resizeMode="cover"
+                />
+              </View>
+              <View style={styles.noBalanceBadge}>
+                <Text style={styles.noBalanceBadgeText}>Wymagana wpłata</Text>
+              </View>
             </View>
             <Text style={styles.statusTitle}>Brak salda</Text>
             <Text style={styles.statusDesc}>
@@ -172,6 +185,16 @@ export default function CodeDisplayScreen({ onBack }: Props) {
 
         {state === 'active' && (
           <View style={styles.activeCard}>
+            {/* Texture banner */}
+            <View style={styles.textureBanner}>
+              <Image
+                source={require('../assets/img/code-card-texture.png')}
+                style={styles.textureImage}
+                resizeMode="cover"
+              />
+              <View style={styles.textureDimOverlay} />
+            </View>
+
             {/* Code display */}
             <View style={styles.codeSection}>
               <View style={styles.codeHeaderRow}>
@@ -250,7 +273,7 @@ const styles = StyleSheet.create({
   backBtn: { width: 40, alignItems: 'center' },
   backIcon: { fontSize: 22, color: colors.primary },
   headerTitle: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 20,
     fontWeight: '600',
     fontStyle: 'italic',
@@ -283,7 +306,7 @@ const styles = StyleSheet.create({
   errorCircle: { backgroundColor: colors.errorContainer },
   statusIcon: { fontSize: 36 },
   statusTitle: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 24,
     fontWeight: '700',
     color: colors.primary,
@@ -305,6 +328,51 @@ const styles = StyleSheet.create({
   },
   infoLabel: { fontSize: 9, fontWeight: '700', color: colors.primary, letterSpacing: 2 },
   infoValue: { fontSize: 20, fontWeight: '700', color: colors.onSurface, marginTop: spacing.xs },
+  noBalanceImageWrapper: {
+    position: 'relative',
+    width: '100%',
+    alignItems: 'center',
+    paddingBottom: spacing.xl,
+  },
+  noBalancePaperBack: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: spacing.xl,
+    backgroundColor: colors.surfaceContainerHigh,
+    borderRadius: radius.xl,
+    transform: [{ rotate: '3deg' }, { scale: 0.95 }],
+    opacity: 0.5,
+  },
+  noBalancePaperFront: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: spacing.xl,
+    backgroundColor: colors.surfaceContainerHighest,
+    borderRadius: radius.xl,
+    transform: [{ rotate: '-2deg' }],
+  },
+  noBalanceImageContainer: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+  },
+  noBalanceImage: { flex: 1, width: '100%' },
+  noBalanceBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: spacing.md,
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    transform: [{ rotate: '-1deg' }],
+  },
+  noBalanceBadgeText: {
+    color: colors.onPrimary,
+    fontFamily: fonts.headline,
+    fontStyle: 'italic',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   backBtnLarge: {
     backgroundColor: colors.surfaceContainer,
     borderRadius: radius.lg,
@@ -327,15 +395,27 @@ const styles = StyleSheet.create({
   activeCard: {
     backgroundColor: colors.surfaceContainerLow,
     borderRadius: radius.xl,
-    padding: spacing.xl,
+    overflow: 'hidden',
     gap: spacing.lg,
+    paddingBottom: spacing.xl,
     shadowColor: '#221a0e',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.08,
     shadowRadius: 40,
     elevation: 5,
   },
-  codeSection: { gap: spacing.md, alignItems: 'center' },
+  textureBanner: {
+    height: 140,
+    overflow: 'hidden',
+  },
+  textureImage: { flex: 1, width: '100%' },
+  textureDimOverlay: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0, height: 60,
+    backgroundColor: colors.surfaceContainerLow,
+    opacity: 0.6,
+  },
+  codeSection: { gap: spacing.md, alignItems: 'center', paddingHorizontal: spacing.xl },
   codeHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   codeStatusDot: { color: '#4caf50', fontSize: 14 },
   codeStatusText: {
@@ -376,7 +456,7 @@ const styles = StyleSheet.create({
   ttlLeft: { fontSize: 10, color: colors.outline },
   ttlTime: { fontWeight: '700', color: colors.onSurface },
   ttlCountdown: { fontSize: 11, fontWeight: '700', fontStyle: 'italic', color: colors.primary },
-  statsGrid: { flexDirection: 'row', gap: spacing.md },
+  statsGrid: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.xl },
   statTile: {
     flex: 1,
     backgroundColor: colors.surfaceContainer,
@@ -393,5 +473,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     lineHeight: 18,
+    paddingHorizontal: spacing.xl,
   },
 });

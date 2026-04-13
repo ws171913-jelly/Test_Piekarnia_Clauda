@@ -2,6 +2,9 @@
   "extends": "@react-native/typescript-config/tsconfig.json",
   "compilerOptions": {
     "strict": true,
+    "jsx": "react-native",
+    "esModuleInterop": true,
+    "types": ["jest"],
     "baseUrl": ".",
     "paths": {
       "@screens/*": ["src/screens/*"],

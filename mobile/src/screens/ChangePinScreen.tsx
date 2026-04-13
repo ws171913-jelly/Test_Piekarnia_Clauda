@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, fonts, radius, spacing } from '../theme';
 import { changePin } from '../services/api';
 import { userStore } from '../store/userStore';
 
@@ -61,15 +62,21 @@ export default function ChangePinScreen({ onPinChanged }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.iconCircle}>
-            <Text style={styles.iconText}>🔑</Text>
+        {/* Hero image with glass overlay card */}
+        <View style={styles.heroSection}>
+          <View style={styles.heroImageContainer}>
+            <Image
+              source={require('../assets/img/change-pin-header.png')}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
           </View>
-          <Text style={styles.title}>Wymagana zmiana PIN-u</Text>
-          <Text style={styles.subtitle}>
-            Dla Twojego bezpieczeństwa, prosimy o zaktualizowanie kodu dostępu.
-          </Text>
+          <View style={styles.heroOverlayCard}>
+            <Text style={styles.title}>Wymagana zmiana PIN-u</Text>
+            <Text style={styles.subtitle}>
+              Dla Twojego bezpieczeństwa, prosimy o zaktualizowanie kodu dostępu.
+            </Text>
+          </View>
         </View>
 
         {/* PIN dots indicator */}
@@ -167,33 +174,45 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.surface },
   container: {
     flexGrow: 1,
-    padding: spacing.lg,
     gap: spacing.xl,
     backgroundColor: colors.surface,
+    paddingBottom: spacing.xl,
   },
-  header: { alignItems: 'center', gap: spacing.sm, paddingTop: spacing.lg },
-  iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.surfaceContainerHigh,
-    alignItems: 'center',
-    justifyContent: 'center',
+  heroSection: { position: 'relative', marginBottom: spacing.xl },
+  heroImageContainer: {
+    height: 192,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
   },
-  iconText: { fontSize: 32 },
+  heroImage: { flex: 1, width: '100%' },
+  heroOverlayCard: {
+    position: 'absolute',
+    bottom: -spacing.xl,
+    left: spacing.lg + spacing.sm,
+    right: spacing.lg + spacing.sm,
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    gap: spacing.xs,
+    shadowColor: '#221a0e',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 4,
+  },
   title: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 26,
     fontWeight: '700',
     fontStyle: 'italic',
     color: colors.primary,
-    textAlign: 'center',
     lineHeight: 32,
   },
   subtitle: {
     fontSize: 13,
     color: colors.onSurfaceVariant,
-    textAlign: 'center',
     lineHeight: 20,
   },
   dotsRow: {
@@ -201,6 +220,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.md,
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
   },
   dot: {
     width: 12,
@@ -219,6 +239,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     padding: spacing.xl,
     gap: spacing.lg,
+    marginHorizontal: spacing.lg,
   },
   errorBanner: {
     backgroundColor: colors.errorContainer,

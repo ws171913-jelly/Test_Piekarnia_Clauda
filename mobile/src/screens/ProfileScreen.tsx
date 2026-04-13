@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { colors, fonts, radius, spacing } from '../theme';
 import { userStore } from '../store/userStore';
 
 interface Props {
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   topBarBrand: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 22,
     fontWeight: '700',
     fontStyle: 'italic',
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   },
   editBadgeIcon: { fontSize: 14, color: colors.onPrimary },
   profileName: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 28,
     fontWeight: '700',
     color: colors.onSurface,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   infoFieldValue: {
-    fontFamily: 'serif',
+    fontFamily: fonts.headline,
     fontSize: 18,
     fontWeight: '600',
     color: colors.onSurface,
