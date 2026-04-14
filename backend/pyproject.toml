@@ -20,6 +20,7 @@ ignore_missing_imports = true
 asyncio_mode = "auto"
 testpaths = ["tests"]
 filterwarnings = ["ignore::DeprecationWarning"]
+timeout = 15
 
 [tool.isort]
 profile = "black"

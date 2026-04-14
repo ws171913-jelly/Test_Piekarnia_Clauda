@@ -31,7 +31,6 @@ async def _call(user: MagicMock) -> tuple:
     return await generate_code(session, user)
 
 
-@pytest.mark.asyncio
 class TestZeroBalanceBlock:
     async def test_zero_balance_raises(self):
         """Saldo = 0 PLN → ValueError."""
@@ -64,12 +63,6 @@ class TestZeroBalanceBlock:
         with pytest.raises(ValueError) as exc_info:
             await _call(user)
         assert "brak salda" in str(exc_info.value).lower()
-
-    async def test_exact_zero_float_raises(self):
-        """Saldo 0.0 (float) → blokada."""
-        user = _make_user(balance=0.0)
-        with pytest.raises(ValueError, match="Brak salda"):
-            await _call(user)
 
     async def test_zero_parsed_from_string_raises(self):
         """Saldo 0.0 (float z konwersji stringa '0') → blokada."""

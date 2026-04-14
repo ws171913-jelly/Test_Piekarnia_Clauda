@@ -32,7 +32,6 @@ async def _call(user: MagicMock) -> tuple:
     return await generate_code(session, user)
 
 
-@pytest.mark.asyncio
 class TestCooldown:
     async def test_cooldown_blocks_within_30_min(self):
         """Kod wygenerowany 10 min temu → blokada."""

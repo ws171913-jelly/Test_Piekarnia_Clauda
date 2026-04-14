@@ -64,7 +64,6 @@ def _make_user(balance: float = 100.0, last_code_at: datetime | None = None) -> 
     return user
 
 
-@pytest.mark.asyncio
 class TestGenerateCode:
     async def _call(self, user: MagicMock):
         session = AsyncMock()

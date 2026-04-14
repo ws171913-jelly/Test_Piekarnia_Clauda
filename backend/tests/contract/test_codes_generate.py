@@ -61,11 +61,11 @@ class TestGenerateCodeContract:
     async def test_zero_balance_returns_422(
         self,
         authed_client: AsyncClient,
-        session: AsyncSession,
+        _setup_session: AsyncSession,
         user: User,
     ):
         user.current_balance = 0
-        await session.commit()
+        await _setup_session.commit()
         resp = await authed_client.post("/api/v1/codes")
         assert resp.status_code == 422
         assert "sald" in resp.json()["detail"].lower()
@@ -73,12 +73,12 @@ class TestGenerateCodeContract:
     async def test_cooldown_returns_422(
         self,
         authed_client: AsyncClient,
-        session: AsyncSession,
+        _setup_session: AsyncSession,
         user: User,
     ):
         # Symuluj niedawno wygenerowany kod
         user.last_code_generated_at = datetime.now(timezone.utc) - timedelta(minutes=5)
-        await session.commit()
+        await _setup_session.commit()
 
         resp = await authed_client.post("/api/v1/codes")
         assert resp.status_code == 422

@@ -91,7 +91,7 @@ export default function HistoryScreen({ onBack }: Props) {
     if (!hasMore || loading) return;
     const nextPage = page + 1;
     loadPage(nextPage, filter).then((ok) => {
-      if (ok !== false) setPage(nextPage);
+      if (ok) setPage(nextPage);
     });
   }
 

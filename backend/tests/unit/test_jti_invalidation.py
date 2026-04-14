@@ -38,7 +38,6 @@ async def _authenticate(user: MagicMock, pin: str) -> tuple[MagicMock, str]:
     return await authenticate_user(session, user.hr_employee_id, pin)
 
 
-@pytest.mark.asyncio
 class TestJtiInvalidation:
     async def test_new_login_changes_jti(self):
         """Każde logowanie generuje nowy jti."""

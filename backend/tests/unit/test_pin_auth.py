@@ -87,7 +87,6 @@ def _make_user(
     return user
 
 
-@pytest.mark.asyncio
 class TestAuthenticateUser:
     async def _call(self, user: MagicMock, pin: str):
         session = AsyncMock()
@@ -162,7 +161,6 @@ class TestAuthenticateUser:
 # Testy change_pin
 # ---------------------------------------------------------------------------
 
-@pytest.mark.asyncio
 class TestChangePin:
     async def _call(self, user: MagicMock, new_pin: str, confirm_pin: str):
         session = AsyncMock()

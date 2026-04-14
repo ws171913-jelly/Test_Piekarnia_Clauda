@@ -48,7 +48,6 @@ async def _auth(user: MagicMock, pin: str = "1234") -> tuple[MagicMock, str]:
     return await authenticate_user(session, user.hr_employee_id, pin)
 
 
-@pytest.mark.asyncio
 class TestDeactivatedEmployee:
     async def test_deactivated_employee_cannot_login(self):
         """Dezaktywowany pracownik → ValueError 'dezaktywowane'."""
@@ -78,7 +77,6 @@ class TestDeactivatedEmployee:
             await generate_code(session, user)
 
 
-@pytest.mark.asyncio
 class TestExpiredBalanceDate:
     async def test_generate_code_ignores_expiry_date(self):
         """generate_code nie weryfikuje balance_expiry_date — to zadanie warstwy HR.
@@ -118,7 +116,6 @@ class TestExpiredBalanceDate:
             await generate_code(session, user)
 
 
-@pytest.mark.asyncio
 class TestExpiredJwt:
     async def test_expired_jwt_raises_on_decode(self):
         """Token z przeszłą datą exp → ExpiredSignatureError przy dekodowaniu."""

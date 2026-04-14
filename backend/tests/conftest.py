@@ -7,12 +7,11 @@ URL testowej bazy konfiguruje się przez zmienną:
 
 Domyślnie używa tej samej bazy co aplikacja z przyrostkiem _test w nazwie.
 """
+import asyncio
 import os
 import uuid
 from datetime import date, timedelta, timezone
 from typing import AsyncGenerator
-
-import asyncio
 
 import pytest
 import pytest_asyncio
@@ -56,7 +55,9 @@ if not _is_test_database(TEST_DATABASE_URL):
 def event_loop():
     """Session-scoped event loop — wymaga tego asyncpg z session-scoped fixtures."""
     loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     yield loop
+    asyncio.set_event_loop(None)
     loop.close()
 
 

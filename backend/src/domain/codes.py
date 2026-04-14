@@ -138,10 +138,18 @@ async def verify_code(
 
     discount_pct = float(user.basket.discount_pct) if user.basket else 0.0
     monthly_limit = user.basket.monthly_limit_pln if user.basket else None
+    balance = float(user.current_balance)
 
-    discount_amount = _calculate_discount(
-        gross_amount_pln, discount_pct, float(user.current_balance), monthly_limit
-    )
+    if balance <= 0:
+        raise ValueError("Brak salda — weryfikacja niemożliwa")
+
+    raw_discount = math.floor(gross_amount_pln * discount_pct / 100)
+    if raw_discount <= 0:
+        raise ValueError(
+            f"Kwota zakupu zbyt niska — rabat {discount_pct:.0f}% zaokrągla się do 0 PLN"
+        )
+
+    discount_amount = _calculate_discount(gross_amount_pln, discount_pct, balance, monthly_limit)
     if discount_amount <= 0:
         raise ValueError("Brak dostępnego salda dla tej transakcji")
     net_amount = gross_amount_pln - discount_amount
