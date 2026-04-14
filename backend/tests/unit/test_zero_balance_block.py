@@ -25,6 +25,9 @@ async def _call(user: MagicMock) -> tuple:
     session.add = MagicMock()
     session.commit = AsyncMock()
     session.refresh = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one.return_value = user
+    session.execute = AsyncMock(return_value=mock_result)
     return await generate_code(session, user)
 
 

@@ -71,6 +71,9 @@ class TestDeactivatedEmployee:
         """
         user = _make_user(is_active=False, balance=0.0)
         session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one.return_value = user
+        session.execute = AsyncMock(return_value=mock_result)
         with pytest.raises(ValueError, match="Brak salda"):
             await generate_code(session, user)
 
@@ -92,6 +95,9 @@ class TestExpiredBalanceDate:
         session.commit = AsyncMock()
         session.refresh = AsyncMock()
         session.add = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one.return_value = user
+        session.execute = AsyncMock(return_value=mock_result)
 
         # generate_code nie rzuca — sprawdza tylko saldo, nie datę ważności
         code, auth_code = await generate_code(session, user)
@@ -105,6 +111,9 @@ class TestExpiredBalanceDate:
             balance_expiry=date.today() - timedelta(days=1),
         )
         session = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one.return_value = user
+        session.execute = AsyncMock(return_value=mock_result)
         with pytest.raises(ValueError, match="Brak salda"):
             await generate_code(session, user)
 

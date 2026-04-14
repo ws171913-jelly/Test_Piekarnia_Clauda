@@ -71,6 +71,11 @@ class TestGenerateCode:
         session.add = MagicMock()
         session.commit = AsyncMock()
         session.refresh = AsyncMock()
+        # generate_code wykonuje SELECT ... WITH FOR UPDATE — mock musi zwracać
+        # MagicMock z .scalar_one() → user, żeby AsyncMock nie zwrócił coroutine
+        mock_result = MagicMock()
+        mock_result.scalar_one.return_value = user
+        session.execute = AsyncMock(return_value=mock_result)
         return await generate_code(session, user)
 
     async def test_returns_code_and_auth_code(self):
