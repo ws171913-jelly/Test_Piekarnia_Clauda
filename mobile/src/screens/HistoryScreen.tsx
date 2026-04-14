@@ -30,8 +30,8 @@ export default function HistoryScreen({ onBack }: Props) {
   const PAGE_SIZE = 20;
 
   const loadPage = useCallback(
-    async (p: number, currentFilter: typeof filter, reset = false) => {
-      if (loading && !reset) return;
+    async (p: number, currentFilter: typeof filter, reset = false): Promise<boolean> => {
+      if (loading && !reset) return false;
       setLoading(true);
       try {
         const typeParam = currentFilter === 'ALL' ? undefined : currentFilter;
@@ -41,6 +41,7 @@ export default function HistoryScreen({ onBack }: Props) {
         setTotal(data.total);
         setHasMore(p * PAGE_SIZE < data.total);
         setOffline(false);
+        return true;
       } catch {
         // Fallback to cache on first page
         if (p === 1) {
@@ -50,21 +51,23 @@ export default function HistoryScreen({ onBack }: Props) {
               currentFilter === 'ALL'
                 ? cached.items
                 : cached.items.filter((tx) => tx.type === currentFilter);
-            setItems(
-              filtered.map((tx) => ({
-                id: tx.id,
-                type: tx.type,
-                gross_amount_pln: tx.grossAmountPln,
-                discount_amount_pln: tx.discountAmountPln,
-                net_amount_pln: tx.netAmountPln,
-                discount_pct_snapshot: tx.discountPctSnapshot,
-                pos_terminal_id: tx.posTerminalId,
-                created_at: tx.createdAt,
-              })),
-            );
+            const mappedItems = filtered.map((tx) => ({
+              id: tx.id,
+              type: tx.type,
+              gross_amount_pln: tx.grossAmountPln,
+              discount_amount_pln: tx.discountAmountPln,
+              net_amount_pln: tx.netAmountPln,
+              discount_pct_snapshot: tx.discountPctSnapshot,
+              pos_terminal_id: tx.posTerminalId,
+              created_at: tx.createdAt,
+            }));
+            setItems(mappedItems);
+            setTotal(mappedItems.length);
+            setHasMore(false);
             setOffline(true);
           }
         }
+        return false;
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -87,8 +90,9 @@ export default function HistoryScreen({ onBack }: Props) {
   function handleLoadMore() {
     if (!hasMore || loading) return;
     const nextPage = page + 1;
-    setPage(nextPage);
-    loadPage(nextPage, filter);
+    loadPage(nextPage, filter).then((ok) => {
+      if (ok !== false) setPage(nextPage);
+    });
   }
 
   function formatPln(amount: number): string {

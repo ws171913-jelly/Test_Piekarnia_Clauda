@@ -135,7 +135,7 @@ curl -X POST http://localhost:8000/api/v1/hr/events \
     "event_id": "test-evt-001",
     "occurred_at": "2026-04-01T00:00:00Z",
     "payload": {
-      "hr_employee_id": "EMP-00001",
+      "hr_employee_id": "EMP001",
       "amount_pln": "200.00",
       "balance_expiry_date": "2026-04-30"
     }

@@ -122,6 +122,8 @@ export default function BalanceScreen({ onGenerateCode, onViewHistory, onLogout 
             userStore.clearSession();
             onLogout?.();
           }}
+          accessibilityLabel="Wyloguj się"
+          accessibilityRole="button"
         >
           <Text style={styles.logoutIcon}>⎋</Text>
         </Pressable>

@@ -28,17 +28,16 @@ async def finalize_transaction(
         payload = jwt.decode(
             verification_token, settings.secret_key, algorithms=[settings.jwt_algorithm]
         )
-    except JWTError:
+        user_id = uuid.UUID(payload["sub"])
+        code_id = uuid.UUID(payload["code_id"])
+        discount_amount = float(payload["discount_amount"])
+        discount_pct = float(payload["discount_pct"])
+        gross_amount = float(payload["gross_amount"])
+        net_amount = float(payload["net_amount"])
+        pos_terminal_id = payload["pos_terminal_id"]
+        ref = pos_transaction_ref or payload.get("pos_transaction_ref")
+    except (JWTError, KeyError, ValueError):
         raise ValueError("Nieważny lub wygasły token weryfikacji")
-
-    user_id = uuid.UUID(payload["sub"])
-    code_id = uuid.UUID(payload["code_id"])
-    discount_amount = float(payload["discount_amount"])
-    discount_pct = float(payload["discount_pct"])
-    gross_amount = float(payload["gross_amount"])
-    net_amount = float(payload["net_amount"])
-    pos_terminal_id = payload["pos_terminal_id"]
-    ref = pos_transaction_ref or payload.get("pos_transaction_ref")
 
     # Pobierz użytkownika z blokadą wiersza
     result = await session.execute(

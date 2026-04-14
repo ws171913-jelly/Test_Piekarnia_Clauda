@@ -44,6 +44,7 @@ class TestVerifyCodeContract:
             "/api/v1/codes/verify",
             json={"code": code, "gross_amount_pln": 100.0},
         )
+        assert resp.status_code == 200, resp.text
         data = resp.json()
         assert "verification_token" in data
         assert "discount_amount_pln" in data
@@ -63,6 +64,7 @@ class TestVerifyCodeContract:
             "/api/v1/codes/verify",
             json={"code": code, "gross_amount_pln": 100.0},
         )
+        assert resp.status_code == 200, resp.text
         data = resp.json()
         assert data["discount_pct"] == 20.0
         assert data["discount_amount_pln"] == 20.0

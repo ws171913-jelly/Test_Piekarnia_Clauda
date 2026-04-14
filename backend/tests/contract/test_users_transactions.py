@@ -85,12 +85,23 @@ class TestTransactionsContract:
         session: AsyncSession,
         user: User,
     ):
-        """Filtrowanie po type=ZAKUP zwraca tylko zakupy."""
+        """Filtrowanie po type=ZAKUP zwraca tylko zakupy — przy obecności obu typów."""
+        from src.domain.transactions import process_refund
+
+        # Dodaj zakup
         await _do_purchase(session, user)
+
+        # Dodaj zwrot (żeby filter ZAKUP naprawdę coś wykluczał)
+        purchase_resp = await authed_client.get("/api/v1/users/me/transactions")
+        purchase_id = purchase_resp.json()["items"][0]["id"]
+        import uuid
+        await process_refund(session, user, uuid.UUID(purchase_id), "terminal-dev")
+
         resp = await authed_client.get(
             "/api/v1/users/me/transactions", params={"type": "ZAKUP"}
         )
         data = resp.json()
+        assert len(data["items"]) >= 1
         for item in data["items"]:
             assert item["type"] == "ZAKUP"
 

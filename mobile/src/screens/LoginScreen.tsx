@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -161,7 +162,15 @@ export default function LoginScreen({ onLoginSuccess }: Props) {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Pressable>
+          <Pressable
+            onPress={() =>
+              Alert.alert(
+                'Nie pamiętasz danych?',
+                'Skontaktuj się z działem HR — zresetują Twój PIN i wyślą nowe dane logowania.',
+                [{ text: 'OK' }],
+              )
+            }
+          >
             <Text style={styles.footerLink}>Nie pamiętasz danych?</Text>
           </Pressable>
           <Text style={styles.footerVersion}>· · · Wersja 2.4.0 Artisan · · ·</Text>
