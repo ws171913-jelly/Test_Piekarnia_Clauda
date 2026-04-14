@@ -34,6 +34,7 @@ export default function BalanceScreen({ onGenerateCode, onViewHistory, onLogout 
   const [refreshing, setRefreshing] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [networkError, setNetworkError] = useState(false);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const loadData = useCallback(async (forceSync = false) => {
     const cached = userStore.getProfile();
@@ -46,21 +47,17 @@ export default function BalanceScreen({ onGenerateCode, onViewHistory, onLogout 
       setRecentTx(cachedTx.items.slice(0, 3));
     }
 
-    if (forceSync || !cached) {
+    if (forceSync || !cached || !cachedTx) {
       setRefreshing(true);
-      try {
-        await syncAll();
-        const fresh = userStore.getProfile();
-        const freshTx = userStore.getTransactions();
-        if (fresh) { setProfile(fresh); setLastSync(new Date(fresh.cachedAt)); }
-        if (freshTx) setRecentTx(freshTx.items.slice(0, 3));
-        setNetworkError(false);
-      } catch {
-        setNetworkError(true);
-      } finally {
-        setRefreshing(false);
-      }
+      const syncOk = await syncAll();
+      const fresh = userStore.getProfile();
+      const freshTx = userStore.getTransactions();
+      if (fresh) { setProfile(fresh); setLastSync(new Date(fresh.cachedAt)); }
+      if (freshTx) setRecentTx(freshTx.items.slice(0, 3));
+      setNetworkError(!syncOk);
     }
+    setRefreshing(false);
+    setInitialLoadDone(true);
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -69,6 +66,16 @@ export default function BalanceScreen({ onGenerateCode, onViewHistory, onLogout 
   // rendering an infinite spinner, show an error state with a retry button.
   const session = userStore.getSession();
   const name = session?.hrEmployeeId ?? '';
+
+  if (!initialLoadDone) {
+    return (
+      <ActivityIndicator
+        style={{ flex: 1 }}
+        size="large"
+        color={colors.primary}
+      />
+    );
+  }
 
   if (!profile && !refreshing) {
     return (

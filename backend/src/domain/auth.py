@@ -80,6 +80,10 @@ async def authenticate_user(
         log_account_locked(hr_employee_id, user.id, user.locked_until)
         raise ValueError(f"Konto zablokowane na {remaining} min")
 
+    if user.locked_until and user.locked_until <= now:
+        user.locked_until = None
+        user.login_attempts = 0
+
     if not verify_pin(pin, user.pin_hash):
         user.login_attempts += 1
         if user.login_attempts >= MAX_LOGIN_ATTEMPTS:

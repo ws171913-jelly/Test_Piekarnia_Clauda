@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 
-from src.database import async_sessionmaker
+from src.database import async_session_factory
 from src.models.transaction import Transaction
 
 
@@ -44,7 +44,7 @@ async def verify_transaction_retention() -> dict[str, int]:
     """
     cutoff = await _months_ago(ARCHIVE_THRESHOLD_MONTHS)
 
-    async with async_sessionmaker() as session:
+    async with async_session_factory() as session:
         result = await session.execute(
             select(func.count(Transaction.id))
             .where(Transaction.created_at <= cutoff)

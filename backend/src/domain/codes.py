@@ -57,11 +57,17 @@ async def generate_code(session: AsyncSession, user: User) -> tuple[str, AuthCod
     """
     now = datetime.now(timezone.utc)
 
+    # Blokada wiersza — zapobiega wyścigowi przy równoczesnych requestach
+    result = await session.execute(
+        select(User).where(User.id == user.id).with_for_update()
+    )
+    user = result.scalar_one()
+
     if float(user.current_balance) <= 0:
         raise ValueError("Brak salda — generowanie kodu niemożliwe")
 
     if user.last_code_generated_at is not None:
-        elapsed = now - user.last_code_generated_at.replace(tzinfo=timezone.utc)
+        elapsed = now - user.last_code_generated_at.astimezone(timezone.utc)
         if elapsed < timedelta(minutes=COOLDOWN_MINUTES):
             remaining = int((timedelta(minutes=COOLDOWN_MINUTES) - elapsed).total_seconds() / 60) + 1
             raise ValueError(f"Karencja — poczekaj {remaining} min przed wygenerowaniem nowego kodu")
@@ -136,6 +142,8 @@ async def verify_code(
     discount_amount = _calculate_discount(
         gross_amount_pln, discount_pct, float(user.current_balance), monthly_limit
     )
+    if discount_amount <= 0:
+        raise ValueError("Brak dostępnego salda dla tej transakcji")
     net_amount = gross_amount_pln - discount_amount
 
     # Wydaj verification_token JWT z danymi transakcji

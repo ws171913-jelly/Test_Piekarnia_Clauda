@@ -53,8 +53,8 @@ async def process_hr_event(
         await _handle_dezaktywacja(session, user, now)
     elif event_type == HrEventType.RESET_PIN:
         return await _handle_reset_pin(session, user)
-
-    return None
+    else:
+        raise ValueError(f"Nieobsługiwany typ zdarzenia HR: {event_type}")
 
 
 async def _handle_nowy_pracownik(
@@ -122,6 +122,8 @@ async def _handle_doladowanie(
 ) -> None:
     if payload.amount_pln is None:
         raise ValueError("Brak amount_pln w payload")
+    if float(payload.amount_pln) <= 0:
+        raise ValueError("amount_pln musi być dodatnie")
     if payload.expiry_date is None:
         raise ValueError("Brak expiry_date w payload")
 

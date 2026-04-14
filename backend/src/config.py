@@ -18,7 +18,8 @@ class Settings(BaseSettings):
             "change-me-in-production-min-32-chars!!",
             "change-hmac-secret-in-production",
         }
-        if self.environment not in {"development", "dev", "local"}:
+        env = self.environment.strip().lower()
+        if env not in {"development", "dev", "local"}:
             for field_name in ("secret_key", "hmac_secret"):
                 if getattr(self, field_name) in insecure_defaults:
                     raise ValueError(

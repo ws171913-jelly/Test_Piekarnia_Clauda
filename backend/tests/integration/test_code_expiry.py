@@ -74,6 +74,7 @@ class TestCodeExpiry:
         self, session: AsyncSession, user: User
     ):
         """Błędny kod OTP → 'Nieprawidłowy lub wygasły'."""
-        await generate_code(session, user)
+        code, _ = await generate_code(session, user)
+        wrong_code = "000000" if code != "000000" else "111111"
         with pytest.raises(ValueError, match="Nieprawidłowy lub wygasły"):
-            await verify_code(session, "000000", 100.0, "terminal-dev")
+            await verify_code(session, wrong_code, 100.0, "terminal-dev")

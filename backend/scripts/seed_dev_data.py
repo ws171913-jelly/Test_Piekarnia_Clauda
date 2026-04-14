@@ -6,7 +6,7 @@ Tworzy: 3 koszyki, 5 pracowników z PIN-ami, 2 terminale POS (env config).
 import asyncio
 import sys
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 sys.path.insert(0, ".")
 
@@ -77,7 +77,7 @@ async def seed() -> None:
                 pin_hash=hash_pin(pin),
                 must_change_pin=False,
                 current_balance=balance,
-                balance_expiry_date=date(2026, 12, 31),
+                balance_expiry_date=date.today() + timedelta(days=365),
                 location_id=location,
                 is_active=True,
             )
@@ -87,7 +87,7 @@ async def seed() -> None:
 
     print("✅ Seed danych deweloperskich zakończony")
     print("\nPracownicy:")
-    for hr_id, pin, basket, balance, location in employees:
+    for hr_id, pin, basket, balance, _location in employees:
         print(f"  {hr_id}: PIN={pin}, koszyk={basket.name}, saldo={balance:.2f} PLN")
     print("\nTerminale POS (ustaw POS_API_KEYS w .env):")
     print("  POS_TERMINAL_001: klucz=pos-key-terminal-001")

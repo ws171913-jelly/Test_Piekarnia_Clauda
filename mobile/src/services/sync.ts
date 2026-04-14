@@ -13,7 +13,7 @@ function emit(status: SyncStatus): void {
   _onStatusChange?.(status);
 }
 
-export async function syncAll(): Promise<void> {
+export async function syncAll(): Promise<boolean> {
   emit('syncing');
   try {
     const [profile, transactions] = await Promise.all([
@@ -52,7 +52,9 @@ export async function syncAll(): Promise<void> {
     });
 
     emit('success');
+    return true;
   } catch {
     emit('error');
+    return false;
   }
 }

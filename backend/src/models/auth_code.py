@@ -1,12 +1,19 @@
+from __future__ import annotations
+
 import enum
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base
+
+if TYPE_CHECKING:
+    from src.models.transaction import Transaction
+    from src.models.user import User
 
 
 class AuthCodeStatus(str, enum.Enum):
@@ -35,7 +42,7 @@ class AuthCode(Base):
         UUID(as_uuid=True), ForeignKey("transactions.id", use_alter=True, name="fk_auth_codes_transaction_id"), nullable=True
     )
 
-    user: Mapped["User"] = relationship("User", back_populates="auth_codes")  # type: ignore[name-defined]
-    transaction: Mapped["Transaction | None"] = relationship(  # type: ignore[name-defined]
+    user: Mapped[User] = relationship("User", back_populates="auth_codes")
+    transaction: Mapped[Transaction | None] = relationship(
         "Transaction", foreign_keys=[transaction_id]
     )
