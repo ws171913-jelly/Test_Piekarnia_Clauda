@@ -3,8 +3,8 @@ import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from jose import jwt
-from passlib.context import CryptContext
+import jwt
+import bcrypt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -13,8 +13,6 @@ from src.config import settings
 from src.domain.audit import log_code_generated
 from src.models.auth_code import AuthCode, AuthCodeStatus
 from src.models.user import User
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 CODE_TTL_MINUTES = 15
 COOLDOWN_MINUTES = 30
@@ -27,11 +25,14 @@ def _generate_otp() -> str:
 
 
 def _hash_code(code: str) -> str:
-    return pwd_context.hash(code)
+    return bcrypt.hashpw(code.encode(), bcrypt.gensalt()).decode()
 
 
 def _verify_code(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(plain.encode(), hashed.encode())
+    except (ValueError, TypeError):
+        return False
 
 
 def _calculate_discount(

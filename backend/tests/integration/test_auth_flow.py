@@ -9,7 +9,7 @@ Scenariusze:
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from jose import jwt
+import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings

@@ -10,7 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from jose import ExpiredSignatureError, jwt
+import jwt
 
 from src.config import settings
 from src.domain.auth import authenticate_user, create_jwt, hash_pin
@@ -134,7 +134,7 @@ class TestExpiredJwt:
             payload, settings.secret_key, algorithm=settings.jwt_algorithm
         )
 
-        with pytest.raises(ExpiredSignatureError):
+        with pytest.raises(jwt.exceptions.ExpiredSignatureError):
             jwt.decode(
                 expired_token,
                 settings.secret_key,

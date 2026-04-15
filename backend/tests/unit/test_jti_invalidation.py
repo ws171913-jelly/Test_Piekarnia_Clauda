@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from jose import jwt
+import jwt
 
 from src.config import settings
 from src.domain.auth import create_jwt, hash_pin, authenticate_user

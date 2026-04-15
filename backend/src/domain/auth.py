@@ -2,8 +2,8 @@ import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from jose import jwt
-from passlib.context import CryptContext
+import jwt
+import bcrypt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,18 +16,19 @@ from src.domain.audit import (
 )
 from src.models.user import User
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_MINUTES = 15
 
 
 def hash_pin(pin: str) -> str:
-    return pwd_context.hash(pin)
+    return bcrypt.hashpw(pin.encode(), bcrypt.gensalt()).decode()
 
 
 def verify_pin(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(plain.encode(), hashed.encode())
+    except (ValueError, TypeError):
+        return False
 
 
 def generate_temp_pin() -> str:

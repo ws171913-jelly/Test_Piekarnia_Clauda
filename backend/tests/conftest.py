@@ -7,7 +7,6 @@ URL testowej bazy konfiguruje się przez zmienną:
 
 Domyślnie używa tej samej bazy co aplikacja z przyrostkiem _test w nazwie.
 """
-import asyncio
 import os
 import uuid
 from datetime import date, timedelta, timezone
@@ -16,11 +15,11 @@ from typing import AsyncGenerator
 import pytest
 import pytest_asyncio
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from src.domain.auth import hash_pin
-from src.models.auth_code import AuthCode, AuthCodeStatus
+from src.models.auth_code import AuthCode, AuthCodeStatus  # noqa: F401
 from src.models.base import Base
 from src.models.basket import Basket
 from src.models.transaction import Transaction  # noqa: F401 — needed for metadata
@@ -31,7 +30,7 @@ from src.models.user import User
 # ---------------------------------------------------------------------------
 
 _DEFAULT_TEST_URL = (
-    "postgresql+asyncpg://bonusapp:bonusapp_secret@localhost:5432/bonusapp_test"
+    "postgresql+asyncpg://bonusapp:bonusapp_secret@127.0.0.1:5432/bonusapp_test"
 )
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", _DEFAULT_TEST_URL)
 
@@ -50,21 +49,6 @@ if not _is_test_database(TEST_DATABASE_URL):
 # ---------------------------------------------------------------------------
 # Engine i schema — tworzone raz na całą sesję pytest
 # ---------------------------------------------------------------------------
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Session-scoped event loop — wymaga tego asyncpg z session-scoped fixtures."""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    yield loop
-    asyncio.set_event_loop(None)
-    loop.close()
-
-
-@pytest.fixture(scope="session")
-def anyio_backend():
-    return "asyncio"
-
 
 @pytest_asyncio.fixture(scope="session")
 async def test_engine():

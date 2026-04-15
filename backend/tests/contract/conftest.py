@@ -10,6 +10,7 @@ Strategia izolacji:
   które muszą przygotować stan bazy (np. zerowanie salda); jego użycie
   powinno być wyjątkiem, nie regułą.
 """
+import os
 import uuid
 from datetime import date, timedelta
 from typing import AsyncGenerator
@@ -18,13 +19,59 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from src.api.deps import get_session
 from src.domain.auth import create_jwt, hash_pin
 from src.main import app
+from src.models.base import Base
 from src.models.basket import Basket
 from src.models.user import User
+
+_DEFAULT_TEST_URL = (
+    "postgresql+asyncpg://bonusapp:bonusapp_secret@127.0.0.1:5432/bonusapp_test"
+)
+_CONTRACT_DB_URL = os.getenv("TEST_DATABASE_URL", _DEFAULT_TEST_URL)
+
+
+# ---------------------------------------------------------------------------
+# Własny test_engine dla testów kontraktowych — izolacja od testów integracyjnych.
+# Zapobiega problemom "Future attached to a different loop" gdy oba zestawy
+# testów uruchamiane są razem: każdy zestaw dostaje osobny schemat i engine.
+# ---------------------------------------------------------------------------
+
+@pytest_asyncio.fixture(scope="session")
+async def test_engine():
+    """
+    Session-scoped engine wyłącznie dla testów kontraktowych.
+
+    Tworzy własny izolowany schemat PostgreSQL, niezależny od schematu
+    używanego przez testy integracyjne. Dzięki temu połączenia asyncpg
+    każdego zestawu testów nie dzielą stanu event loopa.
+    """
+    schema = f"contract_{uuid.uuid4().hex[:8]}"
+
+    bootstrap = create_async_engine(_CONTRACT_DB_URL, echo=False, poolclass=NullPool)
+    async with bootstrap.begin() as conn:
+        await conn.execute(text(f'CREATE SCHEMA "{schema}"'))
+    await bootstrap.dispose()
+
+    engine = create_async_engine(
+        _CONTRACT_DB_URL,
+        echo=False,
+        poolclass=NullPool,
+        connect_args={"server_settings": {"search_path": schema}},
+    )
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    yield engine
+
+    async with engine.begin() as conn:
+        await conn.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
+    await engine.dispose()
+
 
 # ---------------------------------------------------------------------------
 # Internal session — commit-based, tylko do setupu stanu (nie do domain calls)

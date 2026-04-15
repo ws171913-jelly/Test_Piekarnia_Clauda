@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,7 +37,7 @@ async def get_current_user(
         if user_id is None or jti is None:
             raise credentials_exception
         user_uuid = uuid.UUID(user_id)
-    except (JWTError, ValueError) as err:
+    except (jwt.PyJWTError, ValueError) as err:
         raise credentials_exception from err
 
     result = await session.execute(select(User).where(User.id == user_uuid))

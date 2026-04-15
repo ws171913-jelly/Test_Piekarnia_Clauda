@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from jose import JWTError, jwt
+import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,7 +36,7 @@ async def finalize_transaction(
         net_amount = float(payload["net_amount"])
         pos_terminal_id = payload["pos_terminal_id"]
         ref = pos_transaction_ref or payload.get("pos_transaction_ref")
-    except (JWTError, KeyError, ValueError):
+    except (jwt.PyJWTError, KeyError, ValueError):
         raise ValueError("Nieważny lub wygasły token weryfikacji")
 
     # Pobierz użytkownika z blokadą wiersza
