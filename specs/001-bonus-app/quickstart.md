@@ -69,10 +69,10 @@ npm test
 ### Krok 1 — Zaloguj pracownika i wygeneruj kod
 
 ```bash
-# Zaloguj się (zwraca JWT)
+# Zaloguj się (zwraca JWT) — EMP001 z PIN 1234 (z seed danych)
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"hr_employee_id": "EMP-00001", "password": "test123"}'
+  -d '{"hr_employee_id": "EMP001", "pin": "1234"}'
 
 # Wygeneruj kod (użyj tokenu z powyżej)
 curl -X POST http://localhost:8000/api/v1/codes \
@@ -84,7 +84,7 @@ curl -X POST http://localhost:8000/api/v1/codes \
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/codes/verify \
-  -H "X-POS-API-Key: dev-pos-key-001" \
+  -H "X-POS-API-Key: pos-key-terminal-001" \
   -H "Content-Type: application/json" \
   -d '{
     "code": "482931",
@@ -98,7 +98,7 @@ curl -X POST http://localhost:8000/api/v1/codes/verify \
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/codes/finalize \
-  -H "X-POS-API-Key: dev-pos-key-001" \
+  -H "X-POS-API-Key: pos-key-terminal-001" \
   -H "Content-Type: application/json" \
   -d '{
     "verification_token": "<token z verify>",
@@ -135,7 +135,7 @@ curl -X POST http://localhost:8000/api/v1/hr/events \
     "event_id": "test-evt-001",
     "occurred_at": "2026-04-01T00:00:00Z",
     "payload": {
-      "hr_employee_id": "EMP-00001",
+      "hr_employee_id": "EMP001",
       "amount_pln": "200.00",
       "balance_expiry_date": "2026-04-30"
     }
